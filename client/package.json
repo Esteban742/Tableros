@@ -3,15 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-<<<<<<< HEAD
     "@atlaskit/css-reset": "^6.3.5",
-=======
-<<<<<<< HEAD
-=======
-    "@atlaskit/css-reset": "^6.16.0",
-    "@date-io/date-fns": "^2.11.0",
->>>>>>> b29faad (Add missing dependency @atlaskit/css-reset)
->>>>>>> 8a3637e (Add missing dependency @atlaskit/css-reset)
     "@emotion/react": "^11.5.0",
     "@emotion/styled": "^11.3.0",
     "@mui/icons-material": "^5.0.1",
@@ -50,4 +42,3 @@
     ]
   }
 }
-
