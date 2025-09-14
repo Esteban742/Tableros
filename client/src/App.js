@@ -18,17 +18,22 @@ import setBearer from "./Utils/setBearer";
 const App = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) setBearer(token);
-    loadUser(Store.dispatch);
+    if (token) setBearer(token); // Configura Axios
+    loadUser(Store.dispatch);     // Carga usuario si hay token
   }, []);
 
   return (
     <BrowserRouter>
       <Alert />
       <Routes>
-        <Route path="/" element={<Navigate to="/boards" />} />
+        {/* Redirige / a /boards */}
+        <Route path="/" element={<Navigate to="/boards" replace />} />
+
+        {/* Rutas protegidas */}
         <Route path="/boards" element={<ProtectedRoute component={Boards} />} />
         <Route path="/board/:id" element={<ProtectedRoute component={Board} />} />
+
+        {/* Rutas libres */}
         <Route path="/login" element={<FreeRoute component={Login} />} />
         <Route path="/register" element={<FreeRoute component={Register} />} />
       </Routes>
