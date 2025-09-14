@@ -1,16 +1,24 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Route, Redirect } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-const ProtectedRoute = ({ children }) => {
-  const { user } = useSelector((state) => state.user);
+const ProtectedRoute = ({ component: Component, ...rest }) => {
+  const { user, loading } = useSelector((state) => state.user);
 
-  if (!user) {
-    // No hay usuario, redirigir a login
-    return <Navigate to="/login" replace />;
-  }
-
-  return children;
+  return (
+    <Route
+      {...rest}
+      render={(props) =>
+        loading ? (
+          <div>Loading...</div>
+        ) : user ? (
+          <Component {...props} />
+        ) : (
+          <Redirect to="/login" />
+        )
+      }
+    />
+  );
 };
 
 export default ProtectedRoute;
