@@ -27,12 +27,14 @@ export const register = async (data, dispatch) => {
   } else {
     try {
       const res = await axios.post(`${baseUrl}register`, data);
-      dispatch(openAlert({
-        message: res.data.message,
-        severity: "success",
-        nextRoute: "/login",
-        duration: 1500,
-      }));
+      dispatch(
+        openAlert({
+          message: res.data.message,
+          severity: "success",
+          nextRoute: "/login",
+          duration: 1500,
+        })
+      );
     } catch (error) {
       dispatch(openAlert({
         message: error?.response?.data?.errMessage || error.message,
@@ -50,8 +52,9 @@ export const login = async ({ email, password }, dispatch) => {
     const res = await axios.post(`${baseUrl}login`, { email, password });
     const { user, message } = res.data;
 
-    localStorage.setItem("token", user.token); // Guardar token
-    setBearer(user.token);                     // Configurar axios
+    // Guardar token y configurar axios
+    localStorage.setItem("token", user.token);
+    setBearer(user.token);
 
     dispatch(loginSuccess({ user }));
     dispatch(openAlert({ message, severity: "success", nextRoute: "/boards" }));
@@ -64,18 +67,22 @@ export const login = async ({ email, password }, dispatch) => {
   }
 };
 
-// Cargar usuario
+// Cargar usuario logueado
 export const loadUser = async (dispatch) => {
   dispatch(loadStart());
   const token = localStorage.getItem("token");
   if (!token) return dispatch(loadFailure());
 
-  setBearer(token); // Configura axios con token
+  setBearer(token);
+
   try {
     const res = await axios.get(`${baseUrl}get-user`);
     dispatch(loadSuccess({ user: res.data }));
+    return res.data; // Retorna usuario para App.js
   } catch (error) {
+    localStorage.removeItem("token"); // Quita token inválido
     dispatch(loadFailure());
+    return null;
   }
 };
 
@@ -87,6 +94,7 @@ export const getUserFromEmail = async (email, dispatch) => {
     dispatch(fetchingFinish());
     return null;
   }
+
   try {
     const res = await axios.post(`${baseUrl}get-user-with-email`, { email });
     dispatch(fetchingFinish());
