@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Index from "./Components/Pages/IndexPage/Index";
 import Login from "./Components/Pages/LoginPage/Login";
@@ -16,69 +16,63 @@ import Store from "./Redux/Store";
 import setBearer from "./Utils/setBearer";
 
 const App = () => {
-  const [loading, setLoading] = useState(true); // Para esperar loadUser
-  const [user, setUser] = useState(null);
-
   useEffect(() => {
-    const initApp = async () => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        setBearer(token);
-        try {
-          await loadUser(Store.dispatch);
-          setUser(Store.getState().user.currentUser); // Ajusta según tu slice
-        } catch (err) {
-          localStorage.removeItem("token");
-          setUser(null);
-        }
-      }
-      setLoading(false);
-    };
-    initApp();
+    const token = localStorage.getItem("token");
+    if (token) setBearer(token);
+    loadUser(Store.dispatch);
   }, []);
-
-  if (loading) return <div>Cargando...</div>; // Mientras carga usuario
 
   return (
     <BrowserRouter>
       <Alert />
       <Routes>
-        {/* Rutas protegidas */}
         <Route
           path="/boards"
           element={
-            user ? <Boards /> : <Navigate replace to="/login" />
+            <ProtectedRoute>
+              <Boards />
+            </ProtectedRoute>
           }
         />
         <Route
           path="/board/:id"
           element={
-            user ? <Board /> : <Navigate replace to="/login" />
+            <ProtectedRoute>
+              <Board />
+            </ProtectedRoute>
           }
         />
-
-        {/* Rutas públicas */}
         <Route
           path="/login"
-          element={!user ? <Login /> : <Navigate replace to="/boards" />}
+          element={
+            <FreeRoute>
+              <Login />
+            </FreeRoute>
+          }
         />
         <Route
           path="/register"
-          element={!user ? <Register /> : <Navigate replace to="/boards" />}
+          element={
+            <FreeRoute>
+              <Register />
+            </FreeRoute>
+          }
         />
         <Route
           path="/"
-          element={<Index />}
+          element={
+            <FreeRoute>
+              <Index />
+            </FreeRoute>
+          }
         />
-
-        {/* Ruta fallback */}
-        <Route path="*" element={<Navigate replace to="/" />} />
       </Routes>
     </BrowserRouter>
   );
 };
 
 export default App;
+
 
 
 
