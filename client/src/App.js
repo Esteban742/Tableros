@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Switch } from "react-router-dom";
 
 import Index from "./Components/Pages/IndexPage/Index";
 import Login from "./Components/Pages/LoginPage/Login";
@@ -18,55 +18,20 @@ import setBearer from "./Utils/setBearer";
 const App = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) setBearer(token);
-    loadUser(Store.dispatch);
+    if (token) setBearer(token); // Configura Axios con token
+    loadUser(Store.dispatch);   // Carga usuario logueado si existe token
   }, []);
 
   return (
     <BrowserRouter>
       <Alert />
-      <Routes>
-        <Route
-          path="/boards"
-          element={
-            <ProtectedRoute>
-              <Boards />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/board/:id"
-          element={
-            <ProtectedRoute>
-              <Board />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <FreeRoute>
-              <Login />
-            </FreeRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <FreeRoute>
-              <Register />
-            </FreeRoute>
-          }
-        />
-        <Route
-          path="/"
-          element={
-            <FreeRoute>
-              <Index />
-            </FreeRoute>
-          }
-        />
-      </Routes>
+      <Switch>
+        <ProtectedRoute exact path="/boards" component={Boards} />
+        <ProtectedRoute exact path="/board/:id" component={Board} />
+        <FreeRoute exact path="/login" component={Login} />
+        <FreeRoute exact path="/register" component={Register} />
+        <FreeRoute exact path="/" component={Index} />
+      </Switch>
     </BrowserRouter>
   );
 };
