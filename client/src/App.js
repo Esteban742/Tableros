@@ -18,8 +18,8 @@ import setBearer from "./Utils/setBearer";
 const App = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) setBearer(token);
-    loadUser(Store.dispatch);
+    if (token) setBearer(token); // Configura axios con token
+    loadUser(Store.dispatch);    // Carga el usuario si hay token
   }, []);
 
   return (
@@ -37,4 +37,5 @@ const App = () => {
 };
 
 export default App;
+
 
