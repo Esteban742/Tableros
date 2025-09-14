@@ -13,8 +13,14 @@ import {
 } from "../Redux/Slices/userSlice";
 import { openAlert } from "../Redux/Slices/alertSlice";
 import setBearer from "../Utils/setBearer";
-const baseUrl = "http://localhost:3001/user/";
 
+// Base URL dinámico según entorno
+const baseUrl =
+  process.env.NODE_ENV === "production"
+    ? "https://trello-clone-mern-ggrz.onrender.com/user/"
+    : "http://localhost:3001/user/";
+
+// Registro
 export const register = async (
   { name, surname, email, password, repassword },
   dispatch
@@ -22,10 +28,7 @@ export const register = async (
   dispatch(registrationStart());
   if (password !== repassword) {
     dispatch(
-      openAlert({
-        message: "Your passwords does not match!",
-        severity: "error",
-      })
+      openAlert({ message: "Your passwords do not match!", severity: "error" })
     );
   } else {
     try {
@@ -57,21 +60,19 @@ export const register = async (
   dispatch(registrationEnd());
 };
 
+// Login
 export const login = async ({ email, password }, dispatch) => {
   dispatch(loginStart());
   try {
     const res = await axios.post(baseUrl + "login", { email, password });
     const { user, message } = res.data;
+
     localStorage.setItem("token", user.token);
     setBearer(user.token);
-      dispatch(loginSuccess({ user }));
+
+    dispatch(loginSuccess({ user }));
     dispatch(
-      openAlert({
-        message,
-        severity: "success",
-        duration: 500,
-        nextRoute: "/boards",
-      })
+      openAlert({ message, severity: "success", duration: 500, nextRoute: "/boards" })
     );
   } catch (error) {
     dispatch(loginFailure());
@@ -86,10 +87,14 @@ export const login = async ({ email, password }, dispatch) => {
   }
 };
 
+// Cargar usuario logueado
 export const loadUser = async (dispatch) => {
   dispatch(loadStart());
-  if (!localStorage.token) return dispatch(loadFailure());
-  setBearer(localStorage.token);
+  const token = localStorage.getItem("token");
+  if (!token) return dispatch(loadFailure());
+
+  setBearer(token);
+
   try {
     const res = await axios.get(baseUrl + "get-user");
     dispatch(loadSuccess({ user: res.data }));
@@ -98,6 +103,7 @@ export const loadUser = async (dispatch) => {
   }
 };
 
+// Obtener usuario por email
 export const getUserFromEmail = async (email, dispatch) => {
   dispatch(fetchingStart());
   if (!email) {
@@ -106,11 +112,11 @@ export const getUserFromEmail = async (email, dispatch) => {
         message: "Please write an email to invite",
         severity: "warning",
       })
-      );
-      dispatch(fetchingFinish());
-      return null;
-    }
-    
+    );
+    dispatch(fetchingFinish());
+    return null;
+  }
+
   try {
     const res = await axios.post(baseUrl + "get-user-with-email", { email });
     dispatch(fetchingFinish());
@@ -119,12 +125,12 @@ export const getUserFromEmail = async (email, dispatch) => {
     dispatch(
       openAlert({
         message: error?.response?.data?.errMessage
-        ? error.response.data.errMessage
-        : error.message,
+          ? error.response.data.errMessage
+          : error.message,
         severity: "error",
       })
-      );
-     dispatch(fetchingFinish());
-     return null;
+    );
+    dispatch(fetchingFinish());
+    return null;
   }
 };
