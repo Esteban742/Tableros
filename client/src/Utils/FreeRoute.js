@@ -1,24 +1,21 @@
 import React from "react";
-import { Route, Redirect } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-const FreeRoute = ({ component: Component, ...rest }) => {
-  const { user, loading } = useSelector((state) => state.user);
+/**
+ * Para rutas que solo deberían verse si NO hay usuario logueado,
+ * como login o registro.
+ */
+const FreeRoute = ({ component: Component }) => {
+  const { user } = useSelector((state) => state.user);
 
-  return (
-    <Route
-      {...rest}
-      render={(props) =>
-        loading ? (
-          <div>Loading...</div>
-        ) : user ? (
-          <Redirect to="/boards" />
-        ) : (
-          <Component {...props} />
-        )
-      }
-    />
-  );
+  if (user) {
+    // Ya está logueado: redirige a /boards
+    return <Navigate to="/boards" replace />;
+  }
+
+  return <Component />;
 };
 
 export default FreeRoute;
+
