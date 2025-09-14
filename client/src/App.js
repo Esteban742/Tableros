@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Switch } from "react-router-dom";
 
 import Index from "./Components/Pages/IndexPage/Index";
 import Login from "./Components/Pages/LoginPage/Login";
@@ -25,19 +25,16 @@ const App = () => {
   return (
     <BrowserRouter>
       <Alert />
-      <Routes>
-        <Route element={<ProtectedRoute />}>
-          <Route path="/boards" element={<Boards />} />
-          <Route path="/board/:id" element={<Board />} />
-        </Route>
-        <Route element={<FreeRoute />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<Index />} />
-        </Route>
-      </Routes>
+      <Switch>
+        <ProtectedRoute exact path="/boards" component={Boards} />
+        <ProtectedRoute exact path="/board/:id" component={Board} />
+        <FreeRoute exact path="/login" component={Login} />
+        <FreeRoute exact path="/register" component={Register} />
+        <FreeRoute exact path="/" component={Index} />
+      </Switch>
     </BrowserRouter>
   );
 };
 
 export default App;
+
