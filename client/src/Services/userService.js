@@ -27,14 +27,12 @@ export const register = async (data, dispatch) => {
   } else {
     try {
       const res = await axios.post(`${baseUrl}register`, data);
-      dispatch(
-        openAlert({
-          message: res.data.message,
-          severity: "success",
-          nextRoute: "/login",
-          duration: 1500,
-        })
-      );
+      dispatch(openAlert({
+        message: res.data.message,
+        severity: "success",
+        nextRoute: "/login",
+        duration: 1500,
+      }));
     } catch (error) {
       dispatch(openAlert({
         message: error?.response?.data?.errMessage || error.message,
@@ -52,8 +50,8 @@ export const login = async ({ email, password }, dispatch) => {
     const res = await axios.post(`${baseUrl}login`, { email, password });
     const { user, message } = res.data;
 
-    localStorage.setItem("token", user.token);
-    setBearer(user.token);
+    localStorage.setItem("token", user.token); // Guardar token
+    setBearer(user.token);                     // Configurar axios
 
     dispatch(loginSuccess({ user }));
     dispatch(openAlert({ message, severity: "success", nextRoute: "/boards" }));
@@ -72,7 +70,7 @@ export const loadUser = async (dispatch) => {
   const token = localStorage.getItem("token");
   if (!token) return dispatch(loadFailure());
 
-  setBearer(token);
+  setBearer(token); // Configura axios con token
   try {
     const res = await axios.get(`${baseUrl}get-user`);
     dispatch(loadSuccess({ user: res.data }));
@@ -102,4 +100,5 @@ export const getUserFromEmail = async (email, dispatch) => {
     return null;
   }
 };
+
 
