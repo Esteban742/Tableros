@@ -12,7 +12,8 @@ import {
   fetchingFinish,
 } from "../Redux/Slices/userSlice";
 import { openAlert } from "../Redux/Slices/alertSlice";
-import setBearer from "../Utils/setBearer";
+import setBearer from "./Utils/setBearer";
+
 
 // Base URL dinámico según entorno
 const baseUrl =
