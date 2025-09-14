@@ -71,7 +71,7 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-const path = require("path");
+
 
 // ... tus middlewares y rutas API ...
 
