@@ -4,13 +4,14 @@ const express = require('express');
 const unless = require('express-unless');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const path = require('path'); // <-- Mantenemos solo una declaración
+const path = require('path');
 const userRoute = require('./Routes/userRoute');
 const boardRoute = require('./Routes/boardRoute');
 const listRoute = require('./Routes/listRoute');
 const cardRoute = require('./Routes/cardRoute');
 const auth = require('./Middlewares/auth');
 
+// Cargar variables de entorno (.env en local)
 dotenv.config();
 const app = express();
 
@@ -33,17 +34,18 @@ app.use(
 );
 
 // Conexión a MongoDB
-mongoose.Promise = global.Promise;
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log('Database connection is successful!'))
-  .catch((err) => {
-    console.log('Database connection failed!');
-    console.log(`Details: ${err}`);
-  });
+const mongoUri = process.env.MONGO_URI;
+
+if (!mongoUri) {
+  console.error("❌ No se encontró la variable de entorno MONGO_URI");
+} else {
+  mongoose.connect(mongoUri)
+    .then(() => console.log('✅ Database connection is successful!'))
+    .catch((err) => {
+      console.error('❌ Database connection failed!');
+      console.error(`Details: ${err.message}`);
+    });
+}
 
 // Rutas API
 app.use('/user', userRoute);
@@ -53,7 +55,6 @@ app.use('/card', cardRoute);
 
 // Servir React en producción
 if (process.env.NODE_ENV === 'production') {
-  // Ajuste de ruta: ../client/build porque server está dentro de 'server/'
   app.use(express.static(path.join(__dirname, '../client/build')));
 
   app.get('*', (req, res) => {
@@ -64,5 +65,6 @@ if (process.env.NODE_ENV === 'production') {
 // Iniciar servidor
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server is online! Port: ${PORT}`);
+  console.log(`🚀 Server is online! Port: ${PORT}`);
 });
+
