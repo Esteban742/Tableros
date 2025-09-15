@@ -37,6 +37,8 @@ app.use(
       { url: /^\/static\/.*/, methods: ["GET"] }, // JS y CSS generados por React
       { url: "/favicon.ico", methods: ["GET"] },
       { url: "/manifest.json", methods: ["GET"] },
+      { url: "/api/users/register", methods: ["POST"] },
+      { url: "/api/users/login", methods: ["POST"] },
     ],
   })
 );
