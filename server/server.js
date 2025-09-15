@@ -7,11 +7,14 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
 
+// Routes
 const userRoute = require("./routes/userRoute");
 const boardRoute = require("./routes/boardRoute");
 const listRoute = require("./routes/listRoute");
 const cardRoute = require("./routes/cardRoute");
-const verifyToken = require("./middlewares/verifyToken"); // minúsculas
+
+// Middlewares
+const verifyToken = require("./middlewares/verifyToken");
 
 const app = express();
 
@@ -55,5 +58,6 @@ mongoose
     });
   })
   .catch((err) => console.log(err));
+
 
 
