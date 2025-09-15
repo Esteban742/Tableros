@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const listController = require('../Controllers/listController');
+const listController = require('../controllers/listController'); // <- aquí
 
 router.put('/:boardId/:listId/update-title', listController.updateListTitle);
 router.post('/create', listController.create);
