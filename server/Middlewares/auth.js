@@ -1,8 +1,6 @@
 const jwt = require("jsonwebtoken");
-const unless = require("express-unless");
 
-// Middleware para verificar token
-const verifyToken = (req, res, next) => {
+function verifyToken(req, res, next) {
   const token = req.header("Authorization");
 
   if (!token) {
@@ -10,15 +8,13 @@ const verifyToken = (req, res, next) => {
   }
 
   try {
-    const verified = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = verified; // Guardamos datos del usuario en la request
+    // Validar token
+    const decoded = jwt.verify(token.replace("Bearer ", ""), process.env.JWT_SECRET);
+    req.user = decoded; // guardar payload en la request
     next();
   } catch (err) {
-    res.status(400).json({ errMessage: "Invalid Token" });
+    return res.status(401).json({ errMessage: "Invalid or expired token!" });
   }
-};
-
-// Agregar soporte para unless
-verifyToken.unless = unless;
+}
 
 module.exports = verifyToken;
