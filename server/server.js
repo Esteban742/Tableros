@@ -1,6 +1,7 @@
 // Importaciones
 const dotenv = require("dotenv");
 const express = require("express");
+const unless = require("express-unless");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
@@ -11,30 +12,32 @@ const listRoute = require("./Routes/listRoute");
 const cardRoute = require("./Routes/cardRoute");
 const verifyToken = require("./Middlewares/auth");
 
-// Cargar variables de entorno
+// Cargar variables de entorno (.env en local)
 dotenv.config();
 const app = express();
 
-// Middlewares globales
+// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Servir archivos subidos
+// Servir archivos subidos estáticamente
 app.use("/uploads", express.static("uploads"));
 
-// Autenticación con unless (solo pide token en rutas privadas)
+// Autenticación con unless
+verifyToken.unless = unless;
 app.use(
   verifyToken.unless({
     path: [
       { url: "/user/login", methods: ["POST"] },
       { url: "/user/register", methods: ["POST"] },
-      { url: "/", methods: ["GET"] }, // <- ruta pública
+      { url: "/", methods: ["GET"] }, // ruta pública para probar
     ],
   })
 );
 
 // Conexión a MongoDB
 const mongoUri = process.env.MONGO_URI;
+
 if (!mongoUri) {
   console.error("❌ No se encontró la variable de entorno MONGO_URI");
 } else {
