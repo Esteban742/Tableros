@@ -14,7 +14,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// Esto habilita .unless()
+// Habilita el uso de .unless directamente en el middleware
 verifyToken.unless = unless;
 
 module.exports = verifyToken;
