@@ -1,3 +1,4 @@
+// middlewares/verifyTokenWrapper.js
 const verifyToken = require("./verifyToken");
 
 const pathsToExclude = [
@@ -19,7 +20,8 @@ function tokenMiddleware(req, res, next) {
 
   if (excluded) return next();
 
-  verifyToken(req, res, next);
+  verifyToken(req, res, next); // ✅ llama correctamente a la función
 }
 
 module.exports = tokenMiddleware;
+
