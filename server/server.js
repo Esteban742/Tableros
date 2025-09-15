@@ -51,7 +51,7 @@ app.options("*", cors(corsOptions)); // preflight para POST, PUT, DELETE, etc.
 // =========================
 // Excluir archivos estáticos y rutas públicas del token
 // =========================
-verifyToken.unless = unless;
+
 app.use(
   verifyToken.unless({
     path: [
