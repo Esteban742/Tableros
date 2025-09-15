@@ -18,7 +18,7 @@ const listRoute = require("./routes/listRoute");
 const cardRoute = require("./routes/cardRoute");
 
 // Middlewares
-const tokenMiddleware = require("./middlewares/verifyToken");
+const tokenMiddleware = require("./middlewares/verifyTokenWrapper"); // o como lo hayas llamado
 
 const app = express();
 
