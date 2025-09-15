@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
 const userService = require("../services/userService");
-const auth = require("../Middlewares/auth");
+const auth = require("../middlewares/auth");
 
 const register = async (req, res) => {
   const { name, surname, email, password } = req.body;
