@@ -1,5 +1,5 @@
-const cardController = require('../Controllers/cardController');
 const express = require('express');
+const cardController = require('../controllers/cardController'); // <- aquí
 const router = express.Router();
 
 // Agrega multer para manejo de archivos
@@ -19,7 +19,6 @@ router.put('/:boardId/:listId/:cardId/update-cover', cardController.updateCover)
 router.put('/:boardId/:listId/:cardId/:attachmentId/update-attachment', cardController.updateAttachment);
 router.delete('/:boardId/:listId/:cardId/:attachmentId/delete-attachment', cardController.deleteAttachment);
 router.post('/:boardId/:listId/:cardId/add-attachment', cardController.addAttachment);
-// Upload attachment (PDF) using multer
 router.post(
     '/:boardId/:listId/:cardId/upload-attachment',
     upload.single('file'),
@@ -46,5 +45,5 @@ router.post('/:boardId/:listId/:cardId/add-comment', cardController.addComment);
 router.put('/:boardId/:listId/:cardId/:commentId', cardController.updateComment);
 router.delete('/:boardId/:listId/:cardId/:commentId', cardController.deleteComment);
 
-
 module.exports = router;
+
