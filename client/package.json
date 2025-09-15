@@ -1,6 +1,7 @@
 {
   "name": "client",
   "version": "0.1.0",
+  "homepage": ".",
   "private": true,
   "dependencies": {
     "@atlaskit/css-reset": "^6.16.0",
