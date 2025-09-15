@@ -1,5 +1,5 @@
 const express = require('express');
-const boardController = require('../Controllers/boardController');
+const boardController = require('../controllers/boardController'); // <- aquí
 const route = express.Router();
 
 route.post('/:boardId/add-member', boardController.addMember);
@@ -13,3 +13,4 @@ route.get('/:id/activity', boardController.getActivityById);
 route.get('/', boardController.getAll);
 
 module.exports = route;
+
