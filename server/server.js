@@ -1,5 +1,6 @@
 // Importaciones
 const dotenv = require("dotenv");
+dotenv.config();
 const express = require("express");
 const unless = require("express-unless");
 const mongoose = require("mongoose");
@@ -10,64 +11,48 @@ const userRoute = require("./Routes/userRoute");
 const boardRoute = require("./Routes/boardRoute");
 const listRoute = require("./Routes/listRoute");
 const cardRoute = require("./Routes/cardRoute");
-const verifyToken = require("./Middlewares/auth");
+const verifyToken = require("./Middlewares/verifyToken");
 
-// Cargar variables de entorno (.env en local)
-dotenv.config();
 const app = express();
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Servir archivos subidos estáticamente
-app.use("/uploads", express.static("uploads"));
-
-// Autenticación con unless
+// Excluir archivos estáticos y manifest/favicons del token
 verifyToken.unless = unless;
 app.use(
   verifyToken.unless({
     path: [
-      { url: "/api/user/login", methods: ["POST"] },
-      { url: "/api/user/register", methods: ["POST"] },
-      { url: "/", methods: ["GET"] }, // ruta pública para probar
+      { url: "/", methods: ["GET"] },
+      { url: /^\/static\/.*/, methods: ["GET"] }, // JS y CSS generados
+      { url: "/favicon.ico", methods: ["GET"] },
+      { url: "/manifest.json", methods: ["GET"] },
     ],
   })
 );
 
-// Conexión a MongoDB
-const mongoUri = process.env.MONGO_URI;
+// Rutas API protegidas
+app.use("/api/users", userRoute);
+app.use("/api/boards", boardRoute);
+app.use("/api/lists", listRoute);
+app.use("/api/cards", cardRoute);
 
-if (!mongoUri) {
-  console.error("❌ No se encontró la variable de entorno MONGO_URI");
-} else {
-  mongoose
-    .connect(mongoUri)
-    .then(() => console.log("✅ Database connection is successful!"))
-    .catch((err) => {
-      console.error("❌ Database connection failed!");
-      console.error(`Details: ${err.message}`);
-    });
-}
+// Servir React Build (producción)
+app.use(express.static(path.join(__dirname, "../client/build")));
 
-// Rutas API (todas bajo /api)
-app.use("/api/user", userRoute);
-app.use("/api/board", boardRoute);
-app.use("/api/list", listRoute);
-app.use("/api/card", cardRoute);
-
-// Servir React en producción
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../client/build")));
-
-  app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../client", "build", "index.html"));
-  });
-}
-
-// Iniciar servidor
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server is online! Port: ${PORT}`);
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client/build", "index.html"));
 });
+
+// Conexión a MongoDB y puerto
+mongoose
+  .connect(process.env.MONGO_URL)
+  .then(() => {
+    console.log("Conectado a MongoDB");
+    app.listen(process.env.PORT || 5000, () => {
+      console.log(`Servidor corriendo en puerto ${process.env.PORT || 5000}`);
+    });
+  })
+  .catch((err) => console.log(err));
 
