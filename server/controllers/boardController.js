@@ -1,4 +1,4 @@
-const boardService = require('../Services/boardService');
+const boardService = require('../services/boardService');
 
 const create = async (req, res) => {
 	const { title, backgroundImageLink } = req.body;
