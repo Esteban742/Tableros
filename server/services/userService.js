@@ -1,4 +1,4 @@
-const userModel = require("../Models/userModel");
+const userModel = require("../models/userModel");
 const { createRandomHexColor } = require("./helperMethods");
 
 const register = async (user, callback) => {
