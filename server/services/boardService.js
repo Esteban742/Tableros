@@ -1,6 +1,6 @@
-const { findOne } = require('../Models/boardModel');
-const boardModel = require('../Models/boardModel');
-const userModel = require('../Models/userModel');
+const { findOne } = require('../models/boardModel');
+const boardModel = require('../models/boardModel');
+const userModel = require('../models/userModel');
 
 const create = async (req, callback) => {
 	try {
