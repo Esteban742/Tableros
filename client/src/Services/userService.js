@@ -14,14 +14,13 @@ import {
 import { openAlert } from "../Redux/Slices/alertSlice";
 import setBearer from "../Utils/setBearer";
 
-// =======================================
-// Base URL dinámico usando variable de entorno
-// =======================================
-const baseUrl = process.env.REACT_APP_API_URL || "http://localhost:3001/api/users/";
+// Base URL dinámico
+const baseUrl =
+  process.env.NODE_ENV === "production"
+    ? "https://tableros-53ww.onrender.com/api/users/"
+    : "http://localhost:3001/api/users/";
 
-// =======================================
-// Registro
-// =======================================
+// =================== Registro ===================
 export const register = async (data, dispatch) => {
   dispatch(registrationStart());
 
@@ -33,29 +32,15 @@ export const register = async (data, dispatch) => {
 
   try {
     const res = await axios.post(`${baseUrl}register`, data);
-    dispatch(
-      openAlert({
-        message: res.data.message,
-        severity: "success",
-        nextRoute: "/login",
-        duration: 1500,
-      })
-    );
+    dispatch(openAlert({ message: res.data.message, severity: "success", nextRoute: "/login", duration: 1500 }));
   } catch (error) {
-    dispatch(
-      openAlert({
-        message: error?.response?.data?.errMessage || error.message,
-        severity: "error",
-      })
-    );
+    dispatch(openAlert({ message: error?.response?.data?.errMessage || error.message, severity: "error" }));
   }
 
   dispatch(registrationEnd());
 };
 
-// =======================================
-// Login
-// =======================================
+// =================== Login ===================
 export const login = async ({ email, password }, dispatch) => {
   dispatch(loginStart());
 
@@ -70,18 +55,11 @@ export const login = async ({ email, password }, dispatch) => {
     dispatch(openAlert({ message, severity: "success", nextRoute: "/boards" }));
   } catch (error) {
     dispatch(loginFailure());
-    dispatch(
-      openAlert({
-        message: error?.response?.data?.errMessage || error.message,
-        severity: "error",
-      })
-    );
+    dispatch(openAlert({ message: error?.response?.data?.errMessage || error.message, severity: "error" }));
   }
 };
 
-// =======================================
-// Cargar usuario logueado
-// =======================================
+// =================== Cargar usuario ===================
 export const loadUser = async (dispatch) => {
   dispatch(loadStart());
 
@@ -101,9 +79,7 @@ export const loadUser = async (dispatch) => {
   }
 };
 
-// =======================================
-// Obtener usuario por email
-// =======================================
+// =================== Obtener usuario por email ===================
 export const getUserFromEmail = async (email, dispatch) => {
   dispatch(fetchingStart());
 
@@ -121,12 +97,7 @@ export const getUserFromEmail = async (email, dispatch) => {
     dispatch(fetchingFinish());
     return res.data;
   } catch (error) {
-    dispatch(
-      openAlert({
-        message: error?.response?.data?.errMessage || error.message,
-        severity: "error",
-      })
-    );
+    dispatch(openAlert({ message: error?.response?.data?.errMessage || error.message, severity: "error" }));
     dispatch(fetchingFinish());
     return null;
   }
