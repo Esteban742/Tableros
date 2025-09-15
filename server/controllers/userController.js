@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const userService = require("../services/userService");
-const auth = require("../middlewares/verifyToken.js");
+const tokenMiddleware = require("../middlewares/verifyTokenWrapper.js");
+
 
 const register = async (req, res) => {
   const { name, surname, email, password } = req.body;
