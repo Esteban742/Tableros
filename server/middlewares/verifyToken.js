@@ -1,7 +1,7 @@
-// server/middlewares/verifyToken.js
 const jwt = require("jsonwebtoken");
 const unless = require("express-unless");
 
+// Middleware para verificar token JWT
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -15,7 +15,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// ⚠️ Esta línea es clave: habilita .unless
+// ⚠️ Habilitar .unless aquí mismo
 verifyToken.unless = unless;
 
 module.exports = verifyToken;
