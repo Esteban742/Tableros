@@ -14,11 +14,10 @@ import {
 import { openAlert } from "../Redux/Slices/alertSlice";
 import setBearer from "../Utils/setBearer";
 
-// Base URL dinámico según entorno
-const baseUrl =
-  process.env.NODE_ENV === "production"
-    ? "https://trello-clone-mern-ggrz.onrender.com/user/"
-    : "http://localhost:3001/user/";
+// =======================================
+// Base URL dinámico usando variable de entorno
+// =======================================
+const baseUrl = process.env.REACT_APP_API_URL || "http://localhost:3001/api/users/";
 
 // =======================================
 // Registro
@@ -64,7 +63,6 @@ export const login = async ({ email, password }, dispatch) => {
     const res = await axios.post(`${baseUrl}login`, { email, password });
     const { user, message } = res.data;
 
-    // Guardar token en localStorage y configurar axios
     localStorage.setItem("token", user.token);
     setBearer(user.token);
 
@@ -93,7 +91,6 @@ export const loadUser = async (dispatch) => {
     return;
   }
 
-  // Configurar axios con token
   setBearer(token);
 
   try {
@@ -117,7 +114,7 @@ export const getUserFromEmail = async (email, dispatch) => {
   }
 
   const token = localStorage.getItem("token");
-  if (token) setBearer(token); // Asegurarse de usar token actual
+  if (token) setBearer(token);
 
   try {
     const res = await axios.post(`${baseUrl}get-user-with-email`, { email });
