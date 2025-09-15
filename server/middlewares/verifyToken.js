@@ -1,3 +1,4 @@
+// server/middlewares/verifyToken.js
 const jwt = require("jsonwebtoken");
 const unless = require("express-unless");
 
@@ -14,7 +15,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// Habilita el uso de .unless directamente en el middleware
+// ⚠️ Esta línea es clave: habilita .unless
 verifyToken.unless = unless;
 
 module.exports = verifyToken;
