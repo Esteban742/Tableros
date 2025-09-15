@@ -28,8 +28,8 @@ verifyToken.unless = unless;
 app.use(
   verifyToken.unless({
     path: [
-      { url: "/user/login", methods: ["POST"] },
-      { url: "/user/register", methods: ["POST"] },
+      { url: "/api/user/login", methods: ["POST"] },
+      { url: "/api/user/register", methods: ["POST"] },
       { url: "/", methods: ["GET"] }, // ruta pública para probar
     ],
   })
@@ -50,11 +50,11 @@ if (!mongoUri) {
     });
 }
 
-// Rutas API
-app.use("/user", userRoute);
-app.use("/board", boardRoute);
-app.use("/list", listRoute);
-app.use("/card", cardRoute);
+// Rutas API (todas bajo /api)
+app.use("/api/user", userRoute);
+app.use("/api/board", boardRoute);
+app.use("/api/list", listRoute);
+app.use("/api/card", cardRoute);
 
 // Servir React en producción
 if (process.env.NODE_ENV === "production") {
@@ -70,3 +70,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server is online! Port: ${PORT}`);
 });
+
