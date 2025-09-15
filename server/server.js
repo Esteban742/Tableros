@@ -45,7 +45,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", corsOptions); // preflight para POST, PUT, DELETE, etc.
+app.options("*", cors(corsOptions)); // ✅ CORRECTO
+// preflight para POST, PUT, DELETE, etc.
 
 // =========================
 // Middleware de token
