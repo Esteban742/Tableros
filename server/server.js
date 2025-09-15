@@ -30,7 +30,7 @@ app.use(express.json());
 // CORS
 const allowedOrigins = [
   "http://localhost:3000",                // desarrollo local
-  "https://tableros-53ww.onrender.com"    // producción
+  "https://tableros-53ww.onrender.com"   // producción
 ];
 
 const corsOptions = {
@@ -45,12 +45,11 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // preflight para POST, PUT, DELETE, etc.
+app.options("*", corsOptions); // preflight para POST, PUT, DELETE, etc.
 
 // =========================
-// Excluir archivos estáticos y rutas públicas del token
+// Excluir rutas públicas del token
 // =========================
-
 app.use(
   verifyToken.unless({
     path: [
@@ -107,6 +106,4 @@ mongoose
     console.error("❌ Error conectando a MongoDB:", err);
     process.exit(1);
   });
-
-
 
