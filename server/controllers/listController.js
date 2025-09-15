@@ -1,4 +1,4 @@
-const listService = require('../Services/listService');
+const listService = require('../services/listService');
 
 const create = async (req, res) => {
 	// Deconstruct the body
