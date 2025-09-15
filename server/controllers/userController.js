@@ -1,5 +1,5 @@
 const bcrypt = require("bcryptjs");
-const userService = require("../Services/userService");
+const userService = require("../services/userService");
 const auth = require("../Middlewares/auth");
 
 const register = async (req, res) => {
