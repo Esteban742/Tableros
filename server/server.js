@@ -18,18 +18,16 @@ const listRoute = require("./routes/listRoute");
 const cardRoute = require("./routes/cardRoute");
 
 // Middlewares
-const verifyToken = require("./middlewares/verifyToken");
+const tokenMiddleware = require("./middlewares/verifyTokenWrapper");
 
 const app = express();
 
 // =========================
-// Middlewares
+// Middlewares generales
 // =========================
 app.use(express.json());
 
-// =========================
 // CORS
-// =========================
 const allowedOrigins = [
   "http://localhost:3000",                // desarrollo local
   "https://tableros-53ww.onrender.com"   // producción
@@ -49,20 +47,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // =========================
-// Excluir rutas públicas del token
+// Middleware para token (excluye rutas públicas)
 // =========================
-app.use(
-  verifyToken.unless({
-    path: [
-      { url: "/", methods: ["GET"] },
-      { url: /^\/static\/.*/, methods: ["GET"] }, // JS y CSS de React
-      { url: "/favicon.ico", methods: ["GET"] },
-      { url: "/manifest.json", methods: ["GET"] },
-      { url: "/api/users/register", methods: ["POST"] },
-      { url: "/api/users/login", methods: ["POST"] },
-    ],
-  })
-);
+app.use(tokenMiddleware);
 
 // =========================
 // Rutas API protegidas
