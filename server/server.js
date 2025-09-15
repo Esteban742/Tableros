@@ -27,7 +27,9 @@ const app = express();
 // =========================
 app.use(express.json());
 
+// =========================
 // CORS
+// =========================
 const allowedOrigins = [
   "http://localhost:3000",                // desarrollo local
   "https://tableros-53ww.onrender.com"   // producción
@@ -45,7 +47,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", corsOptions); // preflight para POST, PUT, DELETE, etc.
 
 // =========================
 // Excluir rutas públicas del token
@@ -106,4 +107,3 @@ mongoose
     console.error("❌ Error conectando a MongoDB:", err);
     process.exit(1);
   });
-
