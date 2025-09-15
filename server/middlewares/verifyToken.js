@@ -1,23 +1,28 @@
-const jwt = require("jsonwebtoken");
-const unless = require("express-unless");
+const verifyToken = require("./verifyToken");
 
-// Middleware para verificar token JWT
-const verifyToken = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+const pathsToExclude = [
+  { url: "/", methods: ["GET"] },
+  { url: /^\/static\/.*/, methods: ["GET"] },
+  { url: "/favicon.ico", methods: ["GET"] },
+  { url: "/manifest.json", methods: ["GET"] },
+  { url: "/api/users/register", methods: ["POST"] },
+  { url: "/api/users/login", methods: ["POST"] },
+];
 
-  if (!token) return res.status(403).json({ message: "No token provided." });
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(401).json({ message: "Unauthorized!" });
-    req.user = decoded;
-    next();
+function tokenMiddleware(req, res, next) {
+  const excluded = pathsToExclude.some((p) => {
+    const matchUrl =
+      p.url instanceof RegExp ? p.url.test(req.path) : p.url === req.path;
+    const matchMethod = p.methods.includes(req.method);
+    return matchUrl && matchMethod;
   });
-};
 
-// ⚠️ Habilitar .unless aquí mismo
-verifyToken.unless = unless;
+  if (excluded) return next();
 
-module.exports = verifyToken;
+  verifyToken(req, res, next);
+}
+
+module.exports = tokenMiddleware;
+
 
 
