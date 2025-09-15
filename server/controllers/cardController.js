@@ -1,4 +1,4 @@
-const cardService = require('../Services/cardService');
+const cardService = require('../services/cardService');
 
 const create = async (req, res) => {
 	// Deconstruct the params
