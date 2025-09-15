@@ -1,4 +1,4 @@
-const tokenMiddleware = require("./middlewares/verifyTokenWrapper");
+const verifyToken = require("./middlewares/verifyToken");
 
 const pathsToExclude = [
   { url: "/", methods: ["GET"] },
