@@ -1,42 +1,24 @@
 const jwt = require("jsonwebtoken");
-const userModel = require("../Models/userModel");
-const generateToken = (id, email) => {
-  const token = jwt.sign({ id, email }, process.env.JWT_SECRET, {
-    expiresIn: process.env.TOKEN_EXPIRE_TIME,
-  });
-  return token.toString();
-};
+const unless = require("express-unless");
 
-const verifyToken = async(req, res, next) => {
+// Middleware para verificar token
+const verifyToken = (req, res, next) => {
+  const token = req.header("Authorization");
+
+  if (!token) {
+    return res.status(401).json({ errMessage: "Authorization token not found!" });
+  }
+
   try {
-    if (!req.headers["authorization"])
-      return res
-        .status(401)
-        .send({ errMessage: "Authorization token not found!" });
-
-    const header = req.headers["authorization"];
-    const token = header.split(" ")[1];
-
-    await jwt.verify(token, process.env.JWT_SECRET, async(err, verifiedToken) => {
-      if (err)
-        return res
-          .status(401)
-          .send({ errMessage: "Authorization token invalid", details: err });
-      const user = await userModel.findById(verifiedToken.id);
-      req.user = user;
-      next();
-    });
-  } catch (error) {
-    return res
-      .status(500)
-      .send({
-        errMesage: "Internal server error occured!",
-        details: error.message,
-      });
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = verified; // Guardamos datos del usuario en la request
+    next();
+  } catch (err) {
+    res.status(400).json({ errMessage: "Invalid Token" });
   }
 };
 
-module.exports = {
-  generateToken,
-  verifyToken
-};
+// Agregar soporte para unless
+verifyToken.unless = unless;
+
+module.exports = verifyToken;
