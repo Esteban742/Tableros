@@ -1,28 +1,22 @@
-const axios = require("axios");
+const API_URL = process.env.REACT_APP_API_URL;
 
-// Base URL de tu API desplegada
-const API_URL = "https://tableros-53ww.onrender.com/api/users";
-
-const registerUser = async (userData) => {
+export const register = async (userData) => {
   try {
-    const response = await axios.post(`${API_URL}/register`, userData);
-    return response.data;
-  } catch (error) {
-    // Retorna el mensaje de error para mostrarlo en la UI
-    throw error.response?.data || { errMessage: "Error desconocido" };
+    const res = await fetch(`${API_URL}/users/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || "Error al registrar usuario");
+    }
+
+    return res.json();
+  } catch (err) {
+    console.error("Register error:", err);
+    throw err;
   }
 };
 
-const loginUser = async (loginData) => {
-  try {
-    const response = await axios.post(`${API_URL}/login`, loginData);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { errMessage: "Error desconocido" };
-  }
-};
-
-module.exports = {
-  registerUser,
-  loginUser
-};
