@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
 const dotenv = require("dotenv");
+
 dotenv.config();
 
 const userRoute = require("./routes/userRoute");
@@ -33,6 +34,7 @@ app.use("/api/cards", tokenMiddleware, cardRoute);
 // ===== Servir React en producción =====
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));
+
   app.get("*", (req, res) =>
     res.sendFile(path.resolve(__dirname, "../client/build", "index.html"))
   );
@@ -45,6 +47,13 @@ mongoose
   .connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log("✅ Conectado a MongoDB");
+
+    // Manejo básico de errores de servidor
+    app.use((err, req, res, next) => {
+      console.error(err.stack);
+      res.status(500).send("Algo salió mal en el servidor");
+    });
+
     app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
   })
   .catch((err) => {
