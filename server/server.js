@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
 const dotenv = require("dotenv");
+const unless = require("express-unless");
+
 dotenv.config();
 
 const userRoute = require("./routes/userRoute");
@@ -16,7 +18,7 @@ const app = express();
 // Middlewares
 app.use(express.json());
 
-// Configurar CORS para que solo acepte tu frontend
+// Configurar CORS
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "https://tableros-53ww.onrender.com",
@@ -25,25 +27,32 @@ app.use(
   })
 );
 
-// Middleware global para rutas protegidas
-app.use("/api", tokenMiddleware);
+// Middleware global para rutas protegidas, excepto registro y login
+tokenMiddleware.unless = unless;
+app.use(
+  tokenMiddleware.unless({
+    path: [
+      { url: "/api/users/register", methods: ["POST"] },
+      { url: "/api/users/login", methods: ["POST"] },
+    ],
+  })
+);
 
-// Routes
+// Rutas
 app.use("/api/users", userRoute);
 app.use("/api/boards", boardRoute);
 app.use("/api/lists", listRoute);
 app.use("/api/cards", cardRoute);
 
-// Servir frontend en producción
+// Servir React en producción
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));
-app.get("*", (req, res) => {
-  res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
-});
+  app.get("*", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
+  });
+}
 
-
-
-// MongoDB
+// Conectar a MongoDB
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log("✅ Conectado a MongoDB"))
@@ -52,3 +61,4 @@ mongoose
 // Puerto
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+
