@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import Background from "../../Background";
 import { register } from "../../../Services/userService";
@@ -17,7 +17,6 @@ import {
   Hr,
   Link,
 } from "./Styled";
-import { useEffect } from "react";
 
 const Register = () => {
   let history = useHistory();
@@ -32,12 +31,20 @@ const Register = () => {
   });
 
   useEffect(() => {
-    document.title = "Registrar Nuevo Usuario"
-  }, [])
+    document.title = "Registrar Nuevo Usuario";
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await register(userInformations, dispatch);
+
+    // Adaptamos los datos al formato que espera el backend
+    const userData = {
+      username: `${userInformations.name} ${userInformations.surname}`,
+      email: userInformations.email,
+      password: userInformations.password,
+    };
+
+    await register(userData, dispatch);
   };
 
   return (
@@ -79,7 +86,7 @@ const Register = () => {
               />
               <Input
                 type="email"
-                placeholder="Correo Electronico"
+                placeholder="Correo Electrónico"
                 required
                 value={userInformations.email}
                 onChange={(e) =>
@@ -119,7 +126,7 @@ const Register = () => {
               </Button>
               <Hr />
               <Link fontSize="0.85rem" onClick={() => history.push("/login")}>
-                Ya tienes una cuenta? Iniciar Sesión
+                ¿Ya tienes una cuenta? Iniciar Sesión
               </Link>
             </Form>
           </FormCard>
@@ -130,3 +137,4 @@ const Register = () => {
 };
 
 export default Register;
+
