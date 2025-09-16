@@ -1,9 +1,8 @@
-import React, { useState } from "react";
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
-import { login } from "../../../Services/userService";
-import Background from "../../Background";
+import { login } from "../../Services/userService"; // ✅ corregido
+import Background from "../../Components/Background"; // ✅ asegúrate que la ruta es correcta
 import {
   BgContainer,
   Container,
@@ -20,20 +19,29 @@ import {
 } from "./Styled";
 
 const Login = () => {
-  let history = useHistory();
+  const history = useHistory();
   const dispatch = useDispatch();
+  const { pending } = useSelector((state) => state.user);
+
   const [userInformations, setUserInformations] = useState({
     email: "",
     password: "",
   });
 
   useEffect(() => {
-    document.title = "Iniciar Sesión"
-  }, [])
-  const handleSubmit = (e) => {
+    document.title = "Iniciar Sesión";
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    login(userInformations, dispatch);
+    try {
+      await login(userInformations, dispatch);
+      history.push("/"); // ✅ redirige al home o dashboard tras login
+    } catch (err) {
+      alert("Error al iniciar sesión. Verifica tus credenciales.");
+    }
   };
+
   return (
     <>
       <BgContainer>
@@ -45,11 +53,11 @@ const Login = () => {
         </TrelloIconContainer>
         <FormSection>
           <FormCard>
-            <Form onSubmit={(e) => handleSubmit(e)}>
+            <Form onSubmit={handleSubmit}>
               <Title>Iniciar Sesión</Title>
               <Input
                 type="email"
-                placeholder="Correo Electronico"
+                placeholder="Correo Electrónico"
                 required
                 value={userInformations.email}
                 onChange={(e) =>
@@ -71,13 +79,12 @@ const Login = () => {
                   })
                 }
               />
-              <Button>Ingresar</Button>
+              <Button type="submit" disabled={pending}>
+                Ingresar
+              </Button>
               <Hr />
-              <Link
-                fontSize="0.85rem"
-                onClick={() => history.push("/register")}
-              >
-                Ya tienes una cuenta? Iniciar Sesión
+              <Link fontSize="0.85rem" onClick={() => history.push("/register")}>
+                ¿No tienes una cuenta? Registrarse
               </Link>
             </Form>
           </FormCard>
