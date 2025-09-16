@@ -3,6 +3,7 @@ import { useHistory } from "react-router-dom";
 import { register } from "../../../Services/userService";
 import { useDispatch, useSelector } from "react-redux";
 import Background from '../../Background';
+import { openAlert } from "../../../Redux/Slices/alertSlice"; // <-- import agregado
 import {
   BgContainer,
   Container,
@@ -38,12 +39,11 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validación en frontend
-       if (userInformations.password !== userInformations.repassword) {
-       dispatch(openAlert({ message: "Passwords do not match!", severity: "warning" }));
-       return;
-      }
-
+    // Validación en frontend usando openAlert
+    if (userInformations.password !== userInformations.repassword) {
+      dispatch(openAlert({ message: "Las contraseñas no coinciden", severity: "warning" }));
+      return;
+    }
 
     const userData = {
       username: `${userInformations.name} ${userInformations.surname}`,
@@ -55,7 +55,7 @@ const Register = () => {
       await register(userData, dispatch);
       history.push("/"); // redirige después de registrar
     } catch (err) {
-      alert("Error al registrarse. Verifica los datos.");
+      dispatch(openAlert({ message: "Error al registrarse. Verifica los datos.", severity: "error" }));
     }
   };
 
@@ -134,6 +134,7 @@ const Register = () => {
 };
 
 export default Register;
+
 
 
 
