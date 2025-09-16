@@ -38,14 +38,15 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validamos contraseñas en el cliente
+    // 🔹 Validamos contraseñas en el cliente
     if (userInformations.password !== userInformations.repassword) {
-      alert("Las contraseñas no coinciden"); // 👈 o usar tu sistema de alerts de Redux
+      alert("Las contraseñas no coinciden"); 
       return;
     }
 
+    // 🔹 Armamos el objeto que espera el backend
     const userData = {
-      username: `${userInformations.name} ${userInformations.surname}`,
+      username: `${userInformations.name} ${userInformations.surname}`, 
       email: userInformations.email,
       password: userInformations.password,
     };
@@ -128,4 +129,5 @@ const Register = () => {
 };
 
 export default Register;
+
 
