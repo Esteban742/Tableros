@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
 import { login } from "../../../Services/userService";
-import Background from '../../Background';// ✅ corregido
+import { openAlert } from "../../../Redux/Slices/alertSlice"; // ✅ agregado
+import Background from '../../Background';
 import {
   BgContainer,
   Container,
@@ -34,11 +35,33 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!userInformations.email || !userInformations.password) {
+      dispatch(
+        openAlert({
+          message: "Por favor completa todos los campos",
+          severity: "warning",
+        })
+      );
+      return;
+    }
+
     try {
       await login(userInformations, dispatch);
-      history.push("/"); // ✅ redirige al home o dashboard tras login
+      dispatch(
+        openAlert({
+          message: "Inicio de sesión exitoso",
+          severity: "success",
+        })
+      );
+      history.push("/"); // redirige al home o dashboard
     } catch (err) {
-      alert("Error al iniciar sesión. Verifica tus credenciales.");
+      dispatch(
+        openAlert({
+          message: err?.response?.data?.errMessage || "Error al iniciar sesión. Verifica tus credenciales.",
+          severity: "error",
+        })
+      );
     }
   };
 
@@ -61,10 +84,7 @@ const Login = () => {
                 required
                 value={userInformations.email}
                 onChange={(e) =>
-                  setUserInformations({
-                    ...userInformations,
-                    email: e.target.value,
-                  })
+                  setUserInformations({ ...userInformations, email: e.target.value })
                 }
               />
               <Input
@@ -73,10 +93,7 @@ const Login = () => {
                 required
                 value={userInformations.password}
                 onChange={(e) =>
-                  setUserInformations({
-                    ...userInformations,
-                    password: e.target.value,
-                  })
+                  setUserInformations({ ...userInformations, password: e.target.value })
                 }
               />
               <Button type="submit" disabled={pending}>
@@ -95,3 +112,4 @@ const Login = () => {
 };
 
 export default Login;
+
