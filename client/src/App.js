@@ -15,7 +15,7 @@ import { loadUser } from "./Services/userService";
 import Store from "./Redux/Store";
 import setBearer from "./Utils/setBearer";
 
-import axios from "axios"; // <-- Importamos axios
+import axios from "axios";
 
 const App = () => {
   useEffect(() => {
@@ -25,27 +25,51 @@ const App = () => {
     loadUser(Store.dispatch);
     // =======================================
 
-    // ======== PRUEBA DE COMUNICACIÓN CON BACKEND ========
+    // ======== PRUEBA DE BACKEND ========
     const testBackend = async () => {
       try {
-        // Traer tableros
-        const boardsRes = await axios.get(`${process.env.REACT_APP_API_URL}/boards`);
+        const apiUrl = process.env.REACT_APP_API_URL;
+
+        // 1️⃣ Traer tableros
+        const boardsRes = await axios.get(`${apiUrl}/boards`);
         console.log("Tableros:", boardsRes.data);
 
-        // Traer listas
-        const listsRes = await axios.get(`${process.env.REACT_APP_API_URL}/lists`);
+        // 2️⃣ Traer listas
+        const listsRes = await axios.get(`${apiUrl}/lists`);
         console.log("Listas:", listsRes.data);
 
-        // Traer tarjetas
-        const cardsRes = await axios.get(`${process.env.REACT_APP_API_URL}/cards`);
+        // 3️⃣ Traer tarjetas
+        const cardsRes = await axios.get(`${apiUrl}/cards`);
         console.log("Tarjetas:", cardsRes.data);
+
+        // 4️⃣ Intentar registrar un usuario de prueba
+        const testUser = {
+          username: "usuario_prueba",
+          email: "prueba@example.com",
+          password: "123456"
+        };
+
+        // Verificar si el usuario ya existe para no duplicar
+        const usersRes = await axios.get(`${apiUrl}/users`);
+        const userExists = usersRes.data.some(u => u.email === testUser.email);
+
+        if (!userExists) {
+          const registerRes = await axios.post(`${apiUrl}/users/register`, testUser, {
+            headers: { "Content-Type": "application/json" }
+          });
+          console.log("Usuario de prueba registrado:", registerRes.data);
+        } else {
+          console.log("Usuario de prueba ya existe.");
+        }
+
       } catch (error) {
-        console.error("Error comunicándose con el backend:", error.response?.data || error.message);
+        console.error("Error en la prueba de backend:", error.response?.data || error.message);
       }
     };
 
     testBackend();
-    // =====================================================
+    // ====================================
+
   }, []);
 
   return (
@@ -64,4 +88,5 @@ const App = () => {
 };
 
 export default App;
+
 
