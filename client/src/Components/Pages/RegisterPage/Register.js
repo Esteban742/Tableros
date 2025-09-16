@@ -38,7 +38,9 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
+     console.log(userInformations);
+    
     // Validación en frontend usando openAlert
     if (userInformations.password !== userInformations.repassword) {
       dispatch(openAlert({ message: "Las contraseñas no coinciden", severity: "warning" }));
