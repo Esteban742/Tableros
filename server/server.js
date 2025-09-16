@@ -13,40 +13,42 @@ const tokenMiddleware = require("./middlewares/verifyTokenWrapper");
 
 const app = express();
 
-// Middlewares
+// ===== Middlewares =====
 app.use(express.json());
 
-// Configurar CORS
+// CORS
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "https://tableros-53ww.onrender.com",
+    origin: process.env.FRONTEND_URL || "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
   })
 );
 
-// Rutas públicas (registro y login)
+// ===== Rutas API =====
 app.use("/api/users", userRoute);
-
-// Rutas protegidas (requieren token)
 app.use("/api/boards", tokenMiddleware, boardRoute);
 app.use("/api/lists", tokenMiddleware, listRoute);
 app.use("/api/cards", tokenMiddleware, cardRoute);
 
-// Servir React en producción
-app.use(express.static(path.join(__dirname, "../client/build")));
-app.get("*", (req, res) => {
-  res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
-});
+// ===== Servir React en producción =====
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../client/build")));
+  app.get("*", (req, res) =>
+    res.sendFile(path.resolve(__dirname, "../client/build", "index.html"))
+  );
+}
 
-// Conectar a MongoDB
+// ===== Conexión a MongoDB y levantar servidor =====
+const PORT = process.env.PORT || 5000;
+
 mongoose
-  .connect(process.env.MONGO_URL)
-  .then(() => console.log("✅ Conectado a MongoDB"))
-  .catch((err) => console.log("MongoDB error:", err));
-
-// Puerto
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+  .connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => {
+    console.log("✅ Conectado a MongoDB");
+    app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+  })
+  .catch((err) => {
+    console.error("❌ Error conectando a MongoDB:", err);
+  });
 
 
