@@ -1,22 +1,61 @@
-const API_URL = process.env.REACT_APP_API_URL;
+// server/services/userService.js
+const User = require("../models/User"); // Asegúrate de tener el modelo User definido
+const bcrypt = require("bcryptjs");
 
-const register = async (userData) => {
-  try {
-    const res = await fetch(`${API_URL}/users/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData)
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || "Error al registrar usuario");
-    }
-
-    return res.json();
-  } catch (err) {
-    console.error("Register error:", err);
-    throw err;
+// =================== Registrar usuario ===================
+const registerUser = async ({ username, email, password }) => {
+  // Verificar si el usuario ya existe
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    throw { errMessage: "El correo ya está registrado" };
   }
+
+  // Crear usuario con password hasheada
+  const salt = bcrypt.genSaltSync(10);
+  const hashedPassword = bcrypt.hashSync(password, salt);
+
+  const user = new User({
+    username,
+    email,
+    password: hashedPassword,
+  });
+
+  await user.save();
+
+  // Retornar solo la información pública
+  const { _id } = user;
+  return { message: "Usuario registrado exitosamente", user: { _id, username, email } };
+};
+
+// =================== Login usuario ===================
+const loginUser = async ({ email, password }) => {
+  const user = await User.findOne({ email });
+  if (!user) throw { errMessage: "Email o contraseña incorrectos" };
+
+  const passwordMatch = bcrypt.compareSync(password, user.password);
+  if (!passwordMatch) throw { errMessage: "Email o contraseña incorrectos" };
+
+  return user; // Aquí el controller agregará el token y ocultará password
+};
+
+// =================== Obtener usuario por ID ===================
+const getUser = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) throw { errMessage: "Usuario no encontrado" };
+  return user;
+};
+
+// =================== Obtener usuario por email ===================
+const getUserWithMail = async (email) => {
+  const user = await User.findOne({ email });
+  if (!user) throw { errMessage: "Usuario no encontrado" };
+  return user;
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  getUser,
+  getUserWithMail,
 };
 
