@@ -15,11 +15,37 @@ import { loadUser } from "./Services/userService";
 import Store from "./Redux/Store";
 import setBearer from "./Utils/setBearer";
 
+import axios from "axios"; // <-- Importamos axios
+
 const App = () => {
   useEffect(() => {
+    // ======== Configuración inicial ========
     const token = localStorage.getItem("token");
     if (token) setBearer(token);
     loadUser(Store.dispatch);
+    // =======================================
+
+    // ======== PRUEBA DE COMUNICACIÓN CON BACKEND ========
+    const testBackend = async () => {
+      try {
+        // Traer tableros
+        const boardsRes = await axios.get(`${process.env.REACT_APP_API_URL}/boards`);
+        console.log("Tableros:", boardsRes.data);
+
+        // Traer listas
+        const listsRes = await axios.get(`${process.env.REACT_APP_API_URL}/lists`);
+        console.log("Listas:", listsRes.data);
+
+        // Traer tarjetas
+        const cardsRes = await axios.get(`${process.env.REACT_APP_API_URL}/cards`);
+        console.log("Tarjetas:", cardsRes.data);
+      } catch (error) {
+        console.error("Error comunicándose con el backend:", error.response?.data || error.message);
+      }
+    };
+
+    testBackend();
+    // =====================================================
   }, []);
 
   return (
