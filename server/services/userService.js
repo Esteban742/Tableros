@@ -1,9 +1,9 @@
 // server/services/userService.js
-const User = require("../models/userModel");// Asegúrate de tener el modelo User definido
+const User = require("../models/userModel"); // Asegúrate de tener el modelo User definido
 const bcrypt = require("bcryptjs");
 
 // =================== Registrar usuario ===================
-const registerUser = async ({ username, email, password }) => {
+const registerUser = async ({ name, surname, email, password }) => {
   // Verificar si el usuario ya existe
   const existingUser = await User.findOne({ email });
   if (existingUser) {
@@ -15,7 +15,8 @@ const registerUser = async ({ username, email, password }) => {
   const hashedPassword = bcrypt.hashSync(password, salt);
 
   const user = new User({
-    username,
+    name,       // coincide con tu schema
+    surname,    // coincide con tu schema
     email,
     password: hashedPassword,
   });
@@ -24,7 +25,7 @@ const registerUser = async ({ username, email, password }) => {
 
   // Retornar solo la información pública
   const { _id } = user;
-  return { message: "Usuario registrado exitosamente", user: { _id, username, email } };
+  return { message: "Usuario registrado exitosamente", user: { _id, name, surname, email } };
 };
 
 // =================== Login usuario ===================
