@@ -24,34 +24,28 @@ const App = () => {
     if (token) setBearer(token);
     loadUser(Store.dispatch);
 
-    // ===== Prueba de comunicación con backend =====
+    // ===== Prueba de backend =====
     const testBackend = async () => {
       try {
         const apiUrl = process.env.REACT_APP_API_URL;
 
-        // Hacer peticiones de forma segura con timeout
-        const axiosInstance = axios.create({ timeout: 5000 });
-
-        // Traer tableros
-        const boardsRes = await axiosInstance.get(`${apiUrl}/boards`);
+        // Tableros
+        const boardsRes = await axios.get(`${apiUrl}/boards`);
         console.log("Tableros:", boardsRes.data);
 
-        // Traer listas
-        const listsRes = await axiosInstance.get(`${apiUrl}/lists`);
+        // Listas
+        const listsRes = await axios.get(`${apiUrl}/lists`);
         console.log("Listas:", listsRes.data);
 
-        // Traer tarjetas
-        const cardsRes = await axiosInstance.get(`${apiUrl}/cards`);
+        // Tarjetas
+        const cardsRes = await axios.get(`${apiUrl}/cards`);
         console.log("Tarjetas:", cardsRes.data);
       } catch (error) {
         console.error("Error comunicándose con el backend:", error.response?.data || error.message);
       }
     };
 
-    // Ejecutar prueba **solo si estamos en producción** para evitar problemas en desarrollo
-    if (process.env.NODE_ENV === "production") {
-      testBackend();
-    }
+    testBackend();
   }, []);
 
   return (
@@ -70,7 +64,5 @@ const App = () => {
 };
 
 export default App;
-
-
 
 
