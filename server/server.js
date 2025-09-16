@@ -1,63 +1,73 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const path = require("path");
-const dotenv = require("dotenv");
+import React, { useEffect, useState } from "react";
+import { BrowserRouter, Switch, Route, Redirect } from "react-router-dom";
 
-dotenv.config();
+import Index from "./Components/Pages/IndexPage/Index";
+import Login from "./Components/Pages/LoginPage/Login";
+import Register from "./Components/Pages/RegisterPage/Register";
+import Boards from "./Components/Pages/BoardsPage/Boards";
+import Board from "./Components/Pages/BoardPage/Board";
+import Alert from "./Components/AlertSnackBar";
 
-const userRoute = require("./routes/userRoute");
-const boardRoute = require("./routes/boardRoute");
-const listRoute = require("./routes/listRoute");
-const cardRoute = require("./routes/cardRoute");
-const tokenMiddleware = require("./middlewares/verifyTokenWrapper");
+import ProtectedRoute from "./Utils/ProtectedRoute";
+import FreeRoute from "./Utils/FreeRoute";
 
-const app = express();
+import { loadUser } from "./Services/userService";
+import Store from "./Redux/Store";
+import setBearer from "./Utils/setBearer";
 
-// ===== Middlewares =====
-app.use(express.json());
+import axios from "axios";
 
-// CORS
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  })
-);
+const App = () => {
+  const [loadingBoards, setLoadingBoards] = useState(false);
 
-// ===== Rutas API =====
-app.use("/api/users", userRoute);
-app.use("/api/boards", tokenMiddleware, boardRoute);
-app.use("/api/lists", tokenMiddleware, listRoute);
-app.use("/api/cards", tokenMiddleware, cardRoute);
+  useEffect(() => {
+    // Configurar token si existe
+    const token = localStorage.getItem("token");
+    if (token) setBearer(token);
 
-// ===== Servir React en producción =====
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../client/build")));
+    // Cargar usuario
+    loadUser(Store.dispatch);
 
-  app.get("*", (req, res) =>
-    res.sendFile(path.resolve(__dirname, "../client/build", "index.html"))
+    // Hacer prueba de backend
+    const testBackend = async () => {
+      if (!token) return console.warn("No hay token guardado, omitiendo prueba de backend.");
+
+      setLoadingBoards(true);
+      try {
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/boards`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log("Tableros obtenidos del backend:", res.data);
+      } catch (error) {
+        console.error(
+          "Error comunicándose con el backend:",
+          error.response?.data || error.message
+        );
+      } finally {
+        setLoadingBoards(false);
+      }
+    };
+
+    testBackend();
+  }, []);
+
+  return (
+    <BrowserRouter>
+      <Alert />
+      <Switch>
+        <Route exact path="/" render={() => <Redirect to="/boards" />} />
+        <ProtectedRoute exact path="/boards" component={Boards} />
+        <ProtectedRoute exact path="/board/:id" component={Board} />
+        <FreeRoute exact path="/login" component={Login} />
+        <FreeRoute exact path="/register" component={Register} />
+        <Route path="*" render={() => <Redirect to="/" />} />
+      </Switch>
+      {loadingBoards && <div>Cargando tableros...</div>}
+    </BrowserRouter>
   );
-}
+};
 
-// ===== Conexión a MongoDB y levantar servidor =====
-const PORT = process.env.PORT || 5000;
+export default App;
 
-mongoose
-  .connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => {
-    console.log("✅ Conectado a MongoDB");
-
-    // Manejo básico de errores de servidor
-    app.use((err, req, res, next) => {
-      console.error(err.stack);
-      res.status(500).send("Algo salió mal en el servidor");
-    });
-
-    app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
-  })
-  .catch((err) => {
-    console.error("❌ Error conectando a MongoDB:", err);
-  });
 
 
