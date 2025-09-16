@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
-import { login } from "../../../Services/userService"; // ✅ corregido
+import { login } from "../../../Services/userService";
+import Background from '../../Background';// ✅ corregido
 import {
   BgContainer,
   Container,
