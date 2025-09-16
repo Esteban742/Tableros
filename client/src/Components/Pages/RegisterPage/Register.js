@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
-import Background from "../../Background";
-import { register } from "../../Services/userService"; // ✅ Import corregido
+import { register } from "../../Services/userService";
 import { useDispatch, useSelector } from "react-redux";
 import {
   BgContainer,
@@ -19,7 +18,7 @@ import {
 } from "./Styled";
 
 const Register = () => {
-  let history = useHistory();
+  const history = useHistory();
   const dispatch = useDispatch();
   const { pending } = useSelector((state) => state.user);
 
@@ -38,9 +37,9 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validamos contraseñas en el cliente
+    // Validación en frontend
     if (userInformations.password !== userInformations.repassword) {
-      alert("Las contraseñas no coinciden"); // 👈 puedes cambiar a Redux alerts si quieres
+      alert("Las contraseñas no coinciden");
       return;
     }
 
@@ -50,7 +49,12 @@ const Register = () => {
       password: userInformations.password,
     };
 
-    await register(userData, dispatch);
+    try {
+      await register(userData, dispatch);
+      history.push("/"); // redirige después de registrar
+    } catch (err) {
+      alert("Error al registrarse. Verifica los datos.");
+    }
   };
 
   return (
@@ -128,5 +132,6 @@ const Register = () => {
 };
 
 export default Register;
+
 
 
