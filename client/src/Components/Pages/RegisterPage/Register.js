@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import Background from "../../Background";
-import { register } from "../../../Services/userService";
+import { register } from "../../Services/userService"; // ✅ Import corregido
 import { useDispatch, useSelector } from "react-redux";
 import {
   BgContainer,
@@ -22,6 +22,7 @@ const Register = () => {
   let history = useHistory();
   const dispatch = useDispatch();
   const { pending } = useSelector((state) => state.user);
+
   const [userInformations, setUserInformations] = useState({
     name: "",
     surname: "",
@@ -37,7 +38,12 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Adaptamos los datos al formato que espera el backend
+    // Validamos contraseñas en el cliente
+    if (userInformations.password !== userInformations.repassword) {
+      alert("Las contraseñas no coinciden"); // 👈 puedes cambiar a Redux alerts si quieres
+      return;
+    }
+
     const userData = {
       username: `${userInformations.name} ${userInformations.surname}`,
       email: userInformations.email,
@@ -58,7 +64,7 @@ const Register = () => {
         </TrelloIconContainer>
         <FormSection>
           <FormCard>
-            <Form onSubmit={(e) => handleSubmit(e)}>
+            <Form onSubmit={handleSubmit}>
               <Title>Registrarse</Title>
               <Input
                 type="text"
@@ -66,10 +72,7 @@ const Register = () => {
                 required
                 value={userInformations.name}
                 onChange={(e) =>
-                  setUserInformations({
-                    ...userInformations,
-                    name: e.target.value,
-                  })
+                  setUserInformations({ ...userInformations, name: e.target.value })
                 }
               />
               <Input
@@ -78,10 +81,7 @@ const Register = () => {
                 required
                 value={userInformations.surname}
                 onChange={(e) =>
-                  setUserInformations({
-                    ...userInformations,
-                    surname: e.target.value,
-                  })
+                  setUserInformations({ ...userInformations, surname: e.target.value })
                 }
               />
               <Input
@@ -90,10 +90,7 @@ const Register = () => {
                 required
                 value={userInformations.email}
                 onChange={(e) =>
-                  setUserInformations({
-                    ...userInformations,
-                    email: e.target.value,
-                  })
+                  setUserInformations({ ...userInformations, email: e.target.value })
                 }
               />
               <Input
@@ -102,10 +99,7 @@ const Register = () => {
                 required
                 value={userInformations.password}
                 onChange={(e) =>
-                  setUserInformations({
-                    ...userInformations,
-                    password: e.target.value,
-                  })
+                  setUserInformations({ ...userInformations, password: e.target.value })
                 }
               />
               <Input
@@ -114,10 +108,7 @@ const Register = () => {
                 required
                 value={userInformations.repassword}
                 onChange={(e) =>
-                  setUserInformations({
-                    ...userInformations,
-                    repassword: e.target.value,
-                  })
+                  setUserInformations({ ...userInformations, repassword: e.target.value })
                 }
               />
 
@@ -137,4 +128,5 @@ const Register = () => {
 };
 
 export default Register;
+
 
