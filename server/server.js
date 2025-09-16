@@ -3,8 +3,6 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
 const dotenv = require("dotenv");
-const unless = require("express-unless");
-
 dotenv.config();
 
 const userRoute = require("./routes/userRoute");
@@ -27,30 +25,19 @@ app.use(
   })
 );
 
-// Middleware global para rutas protegidas, excepto registro y login
-tokenMiddleware.unless = unless;
-app.use(
-  tokenMiddleware.unless({
-    path: [
-      { url: "/api/users/register", methods: ["POST"] },
-      { url: "/api/users/login", methods: ["POST"] },
-    ],
-  })
-);
-
-// Rutas
+// Rutas públicas (registro y login)
 app.use("/api/users", userRoute);
-app.use("/api/boards", boardRoute);
-app.use("/api/lists", listRoute);
-app.use("/api/cards", cardRoute);
+
+// Rutas protegidas (requieren token)
+app.use("/api/boards", tokenMiddleware, boardRoute);
+app.use("/api/lists", tokenMiddleware, listRoute);
+app.use("/api/cards", tokenMiddleware, cardRoute);
 
 // Servir React en producción
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../client/build")));
-  app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
-  });
-}
+app.use(express.static(path.join(__dirname, "../client/build")));
+app.get("*", (req, res) => {
+  res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
+});
 
 // Conectar a MongoDB
 mongoose
@@ -61,4 +48,5 @@ mongoose
 // Puerto
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+
 
