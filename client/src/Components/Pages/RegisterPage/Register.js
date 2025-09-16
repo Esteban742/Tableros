@@ -39,10 +39,11 @@ const Register = () => {
     e.preventDefault();
 
     // Validación en frontend
-    if (userInformations.password !== userInformations.repassword) {
-      alert("Las contraseñas no coinciden");
-      return;
-    }
+       if (userInformations.password !== userInformations.repassword) {
+       dispatch(openAlert({ message: "Passwords do not match!", severity: "warning" }));
+       return;
+      }
+
 
     const userData = {
       username: `${userInformations.name} ${userInformations.surname}`,
