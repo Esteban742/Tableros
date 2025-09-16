@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter, Switch, Route, Redirect } from "react-router-dom";
 
 import Index from "./Components/Pages/IndexPage/Index";
@@ -18,40 +18,28 @@ import setBearer from "./Utils/setBearer";
 import axios from "axios";
 
 const App = () => {
+  const [loadingBoards, setLoadingBoards] = useState(false);
+
   useEffect(() => {
-    // ===== Configuración inicial =====
     const token = localStorage.getItem("token");
     if (token) setBearer(token);
     loadUser(Store.dispatch);
 
-    // ===== Prueba de comunicación con backend =====
     const testBackend = async () => {
+      if (!token) return console.warn("No token guardado, omitiendo prueba de backend.");
+      setLoadingBoards(true);
       try {
-        const apiUrl = process.env.REACT_APP_API_URL;
-
-        // Hacer peticiones de forma segura con timeout
-        const axiosInstance = axios.create({ timeout: 5000 });
-
-        // Traer tableros
-        const boardsRes = await axiosInstance.get(`${apiUrl}/boards`);
-        console.log("Tableros:", boardsRes.data);
-
-        // Traer listas
-        const listsRes = await axiosInstance.get(`${apiUrl}/lists`);
-        console.log("Listas:", listsRes.data);
-
-        // Traer tarjetas
-        const cardsRes = await axiosInstance.get(`${apiUrl}/cards`);
-        console.log("Tarjetas:", cardsRes.data);
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/boards`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log("Tableros obtenidos del backend:", res.data);
       } catch (error) {
         console.error("Error comunicándose con el backend:", error.response?.data || error.message);
+      } finally {
+        setLoadingBoards(false);
       }
     };
-
-    // Ejecutar prueba **solo si estamos en producción** para evitar problemas en desarrollo
-    if (process.env.NODE_ENV === "production") {
-      testBackend();
-    }
+    testBackend();
   }, []);
 
   return (
@@ -65,6 +53,7 @@ const App = () => {
         <FreeRoute exact path="/register" component={Register} />
         <Route path="*" render={() => <Redirect to="/" />} />
       </Switch>
+      {loadingBoards && <div>Cargando tableros...</div>}
     </BrowserRouter>
   );
 };
