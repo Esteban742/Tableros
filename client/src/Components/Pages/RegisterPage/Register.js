@@ -39,14 +39,11 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validación en frontend
     if (userInformations.password !== userInformations.repassword) {
-      dispatch(
-        openAlert({
-          message: "Las contraseñas no coinciden",
-          severity: "warning",
-        })
-      );
+      dispatch(openAlert({
+        message: "Las contraseñas no coinciden",
+        severity: "warning",
+      }));
       return;
     }
 
@@ -57,21 +54,17 @@ const Register = () => {
     };
 
     try {
-      await register(userData, dispatch);
-      dispatch(
-        openAlert({
-          message: "Usuario registrado exitosamente",
-          severity: "success",
-        })
-      );
-      history.push("/"); // redirige después de registrar
+      await register(userData, dispatch); // guarda token automáticamente
+      dispatch(openAlert({
+        message: "Usuario registrado exitosamente",
+        severity: "success",
+      }));
+      history.push("/boards"); // redirige al dashboard
     } catch (err) {
-      dispatch(
-        openAlert({
-          message: err?.response?.data?.errMessage || "Error al registrarse. Verifica los datos.",
-          severity: "error",
-        })
-      );
+      dispatch(openAlert({
+        message: err?.response?.data?.errMessage || "Error al registrarse. Verifica los datos.",
+        severity: "error",
+      }));
     }
   };
 
@@ -133,10 +126,7 @@ const Register = () => {
                   setUserInformations({ ...userInformations, repassword: e.target.value })
                 }
               />
-
-              <Button type="submit" disabled={pending}>
-                Registrar
-              </Button>
+              <Button type="submit" disabled={pending}>Registrar</Button>
               <Hr />
               <Link fontSize="0.85rem" onClick={() => history.push("/login")}>
                 ¿Ya tienes una cuenta? Iniciar Sesión
