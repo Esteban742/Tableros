@@ -1,105 +1,131 @@
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+import { useHistory } from "react-router-dom";
+import Background from "../../Background";
+import { register } from "../../../Services/userService";
+import { useDispatch, useSelector } from "react-redux";
 import {
-  registrationStart,
-  registrationEnd,
-  loginStart,
-  loginFailure,
-  loginSuccess,
-  loadStart,
-  loadSuccess,
-  loadFailure,
-  fetchingStart,
-  fetchingFinish,
-} from "../Redux/Slices/userSlice";
-import { openAlert } from "../Redux/Slices/alertSlice";
-import setBearer from "../Utils/setBearer";
+  BgContainer,
+  Container,
+  TrelloIconContainer,
+  FormSection,
+  FormCard,
+  Form,
+  Title,
+  Input,
+  Button,
+  Icon,
+  Hr,
+  Link,
+} from "./Styled";
 
-// Base URL dinámico
-const baseUrl =
-  process.env.NODE_ENV === "production"
-    ? "https://tableros-53ww.onrender.com/api/users/"
-    : "http://localhost:3001/api/users/";
+const Register = () => {
+  let history = useHistory();
+  const dispatch = useDispatch();
+  const { pending } = useSelector((state) => state.user);
 
-// =================== Registro ===================
-export const register = async (data, dispatch) => {
-  dispatch(registrationStart());
+  const [userInformations, setUserInformations] = useState({
+    name: "",
+    surname: "",
+    email: "",
+    password: "",
+    repassword: "",
+  });
 
-  if (data.password !== data.repassword) {
-    dispatch(openAlert({ message: "Passwords do not match!", severity: "error" }));
-    dispatch(registrationEnd());
-    return;
-  }
+  useEffect(() => {
+    document.title = "Registrar Nuevo Usuario";
+  }, []);
 
-  try {
-    const res = await axios.post(`${baseUrl}register`, data);
-    dispatch(openAlert({ message: res.data.message, severity: "success", nextRoute: "/login", duration: 1500 }));
-  } catch (error) {
-    dispatch(openAlert({ message: error?.response?.data?.errMessage || error.message, severity: "error" }));
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  dispatch(registrationEnd());
+    // Validamos contraseñas en el cliente
+    if (userInformations.password !== userInformations.repassword) {
+      alert("Las contraseñas no coinciden"); // 👈 o usar tu sistema de alerts de Redux
+      return;
+    }
+
+    const userData = {
+      username: `${userInformations.name} ${userInformations.surname}`,
+      email: userInformations.email,
+      password: userInformations.password,
+    };
+
+    await register(userData, dispatch);
+  };
+
+  return (
+    <>
+      <BgContainer>
+        <Background />
+      </BgContainer>
+      <Container>
+        <TrelloIconContainer onClick={() => history.push("/")}>
+          <Icon src="https://i.postimg.cc/6Qj1y8hB/logok.png" />
+        </TrelloIconContainer>
+        <FormSection>
+          <FormCard>
+            <Form onSubmit={handleSubmit}>
+              <Title>Registrarse</Title>
+              <Input
+                type="text"
+                placeholder="Nombre"
+                required
+                value={userInformations.name}
+                onChange={(e) =>
+                  setUserInformations({ ...userInformations, name: e.target.value })
+                }
+              />
+              <Input
+                type="text"
+                placeholder="Apellido"
+                required
+                value={userInformations.surname}
+                onChange={(e) =>
+                  setUserInformations({ ...userInformations, surname: e.target.value })
+                }
+              />
+              <Input
+                type="email"
+                placeholder="Correo Electrónico"
+                required
+                value={userInformations.email}
+                onChange={(e) =>
+                  setUserInformations({ ...userInformations, email: e.target.value })
+                }
+              />
+              <Input
+                type="password"
+                placeholder="Contraseña"
+                required
+                value={userInformations.password}
+                onChange={(e) =>
+                  setUserInformations({ ...userInformations, password: e.target.value })
+                }
+              />
+              <Input
+                type="password"
+                placeholder="Confirmar Contraseña"
+                required
+                value={userInformations.repassword}
+                onChange={(e) =>
+                  setUserInformations({ ...userInformations, repassword: e.target.value })
+                }
+              />
+
+              <Button type="submit" disabled={pending}>
+                Registrar
+              </Button>
+              <Hr />
+              <Link fontSize="0.85rem" onClick={() => history.push("/login")}>
+                ¿Ya tienes una cuenta? Iniciar Sesión
+              </Link>
+            </Form>
+          </FormCard>
+        </FormSection>
+      </Container>
+    </>
+  );
 };
 
-// =================== Login ===================
-export const login = async ({ email, password }, dispatch) => {
-  dispatch(loginStart());
-
-  try {
-    const res = await axios.post(`${baseUrl}login`, { email, password });
-    const { user, message } = res.data;
-
-    localStorage.setItem("token", user.token);
-    setBearer(user.token);
-
-    dispatch(loginSuccess({ user }));
-    dispatch(openAlert({ message, severity: "success", nextRoute: "/boards" }));
-  } catch (error) {
-    dispatch(loginFailure());
-    dispatch(openAlert({ message: error?.response?.data?.errMessage || error.message, severity: "error" }));
-  }
-};
-
-// =================== Cargar usuario ===================
-export const loadUser = async (dispatch) => {
-  dispatch(loadStart());
-
-  const token = localStorage.getItem("token");
-  if (!token) {
-    dispatch(loadFailure());
-    return;
-  }
-
-  setBearer(token);
-
-  try {
-    const res = await axios.get(`${baseUrl}get-user`);
-    dispatch(loadSuccess({ user: res.data }));
-  } catch (error) {
-    dispatch(loadFailure());
-  }
-};
-
-// =================== Obtener usuario por email ===================
-export const getUserFromEmail = async (email, dispatch) => {
-  dispatch(fetchingStart());
-
-  if (!email) {
-    dispatch(openAlert({ message: "Please write an email to invite", severity: "warning" }));
-    dispatch(fetchingFinish());
-    return null;
-  }
-
-  const token = localStorage.getItem("token");
-  if (token) setBearer(token);
-
-  try {
-    const res = await axios.post(`${baseUrl}get-user-with-email`, { email });
-    dispatch(fetchingFinish());
-    return res.data;
-  } catch (error) {
-    dispatch(openAlert({ message: error?.response?.data?.errMessage || error.message, severity: "error" }));
-    dispatch(fetchingFinish());
-    return null;
-  }
-};
+export default Register;
 
