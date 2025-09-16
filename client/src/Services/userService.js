@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
-import Background from "../../Background";
 import { register } from "../../../Services/userService";
 import { useDispatch, useSelector } from "react-redux";
 import {
