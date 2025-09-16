@@ -1,9 +1,8 @@
 const bcrypt = require("bcryptjs");
 const userService = require("../services/userService");
-const auth = require("../utils/auth"); // <- Asegúrate de tener esta función
 const tokenMiddleware = require("../middlewares/verifyTokenWrapper.js");
 
-// =================== Registrar usuario ===================
+
 const register = async (req, res) => {
   const { name, surname, email, password } = req.body;
   if (!(name && surname && email && password)) {
@@ -12,16 +11,18 @@ const register = async (req, res) => {
       .send({ errMessage: "Please fill all required areas!" });
   }
 
+  const salt = bcrypt.genSaltSync(10);
+  const hashedPassword = bcrypt.hashSync(password, salt);
+  req.body.password = hashedPassword;
+
   try {
-    // Llamamos al service, que ya hace el hash
-    const result = await userService.registerUser({ name, surname, email, password });
+    const result = await userService.registerUser(req.body);
     return res.status(201).send(result);
   } catch (err) {
     return res.status(400).send(err);
   }
 };
 
-// =================== Login usuario ===================
 const login = async (req, res) => {
   const { email, password } = req.body;
   if (!(email && password)) {
@@ -31,23 +32,28 @@ const login = async (req, res) => {
   }
 
   try {
-    const user = await userService.loginUser({ email, password });
+    const result = await userService.loginUser({ email, password });
+    
+    // Aquí asumimos que result trae la password hasheada
+    const hashedPassword = result.password;
+    if (!bcrypt.compareSync(password, hashedPassword)) {
+      return res
+        .status(400)
+        .send({ errMessage: "Your email/password is wrong!" });
+    }
 
-    // Generar token
-    const token = auth.generateToken(user._id.toString(), user.email);
-    user.token = token;
-    user.password = undefined;
-    user.__v = undefined;
+    result.token = auth.generateToken(result._id.toString(), result.email);
+    result.password = undefined;
+    result.__v = undefined;
 
     return res
       .status(200)
-      .send({ message: "User login successful!", user });
+      .send({ message: "User login successful!", user: result });
   } catch (err) {
     return res.status(400).send(err);
   }
 };
 
-// =================== Obtener usuario por ID ===================
 const getUser = async (req, res) => {
   const userId = req.user.id;
   try {
@@ -60,7 +66,6 @@ const getUser = async (req, res) => {
   }
 };
 
-// =================== Obtener usuario por email ===================
 const getUserWithMail = async (req, res) => {
   const { email } = req.body;
   try {
@@ -83,4 +88,3 @@ module.exports = {
   getUser,
   getUserWithMail,
 };
-
