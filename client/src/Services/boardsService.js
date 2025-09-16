@@ -1,24 +1,22 @@
-import axios from "axios";
-import { openAlert } from "../Redux/Slices/alertSlice";
+// src/Services/boardsService.js
+import api from './api';
+import { openAlert } from '../Redux/Slices/alertSlice';
 import {
   failFetchingBoards,
   startFetchingBoards,
   successFetchingBoards,
+  startCreatingBoard,
   successCreatingBoard,
   failCreatingBoard,
-  startCreatingBoard,
-} from "../Redux/Slices/boardsSlice";
-import { addNewBoard } from "../Redux/Slices/userSlice";
-import { setLoading, successFetchingBoard, updateTitle } from "../Redux/Slices/boardSlice";
+} from '../Redux/Slices/boardsSlice';
+import { addNewBoard } from '../Redux/Slices/userSlice';
+import { setLoading, successFetchingBoard, updateTitle } from '../Redux/Slices/boardSlice';
 
-// ✅ Usamos variable de entorno
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
-const baseUrl = `${API_URL}/board`;
-
+// Obtener todos los tableros
 export const getBoards = async (fromDropDown, dispatch) => {
   if (!fromDropDown) dispatch(startFetchingBoards());
   try {
-    const res = await axios.get(baseUrl + "/");
+    const res = await api.get('/board');
     setTimeout(() => {
       dispatch(successFetchingBoards({ boards: res.data }));
     }, 1000);
@@ -26,52 +24,80 @@ export const getBoards = async (fromDropDown, dispatch) => {
     dispatch(failFetchingBoards());
     dispatch(
       openAlert({
-        message: error?.response?.data?.errMessage
-          ? error.response.data.errMessage
-          : error.message,
-        severity: "error",
+        message: error?.response?.data?.errMessage || error.message,
+        severity: 'error',
       })
     );
   }
 };
 
+// Crear un nuevo tablero
 export const createBoard = async (props, dispatch) => {
   dispatch(startCreatingBoard());
-  if (!(props.title && props.backgroundImageLink)) {
+  if (!props.title || !props.backgroundImageLink) {
     dispatch(failCreatingBoard());
     dispatch(
       openAlert({
-        message: "Please enter a title for board!",
-        severity: "warning",
+        message: 'Please enter a title and background for the board!',
+        severity: 'warning',
       })
     );
     return;
   }
+
   try {
-    const res = await axios.post(baseUrl + "/create", props);
+    const res = await api.post('/board/create', props);
     dispatch(addNewBoard(res.data));
     dispatch(successCreatingBoard(res.data));
     dispatch(
       openAlert({
         message: `${res.data.title} board has been successfully created`,
-        severity: "success",
+        severity: 'success',
       })
     );
   } catch (error) {
     dispatch(failCreatingBoard());
     dispatch(
       openAlert({
-        message: error?.response?.data?.errMessage
-          ? error.response.data.errMessage
-          : error.message,
-        severity: "error",
+        message: error?.response?.data?.errMessage || error.message,
+        severity: 'error',
       })
     );
   }
 };
 
+// Obtener un tablero específico
 export const getBoard = async (boardId, dispatch) => {
   dispatch(setLoading(true));
   try {
-    const res = await axios.get(baseUrl + "/" + boardId);
+    const res = await api.get(`/board/${boardId}`);
     dispatch(successFetchingBoard(res.data));
+    setTimeout(() => {
+      dispatch(setLoading(false));
+    }, 1000);
+  } catch (error) {
+    dispatch(setLoading(false));
+    dispatch(
+      openAlert({
+        message: error?.response?.data?.errMessage || error.message,
+        severity: 'error',
+      })
+    );
+  }
+};
+
+// Actualizar título del tablero
+export const boardTitleUpdate = async (title, boardId, dispatch) => {
+  try {
+    dispatch(updateTitle(title));
+    await api.put(`/board/${boardId}/update-board-title`, { title });
+  } catch (error) {
+    dispatch(
+      openAlert({
+        message: error?.response?.data?.errMessage || error.message,
+        severity: 'error',
+      })
+    );
+  }
+};
+
