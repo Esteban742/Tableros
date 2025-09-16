@@ -3,13 +3,14 @@ const jwt = require("jsonwebtoken");
 
 // Rutas que NO requieren token
 const pathsToExclude = [
-  { url: "/api/users/register", methods: ["POST"] },
-  { url: "/api/users/login", methods: ["POST"] },
+  { url: "/users/register", methods: ["POST"] },
+  { url: "/users/login", methods: ["POST"] },
   { url: "/", methods: ["GET"] },
   { url: /^\/static\/.*/, methods: ["GET"] },
   { url: "/favicon.ico", methods: ["GET"] },
   { url: "/manifest.json", methods: ["GET"] },
 ];
+
 
 const tokenMiddleware = (req, res, next) => {
   // Normalizar path para evitar errores de trailing slash
