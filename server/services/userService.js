@@ -1,5 +1,5 @@
 // server/services/userService.js
-const User = require("../models/user"); // Asegúrate de tener el modelo User definido
+const User = require("../models/userModel");// Asegúrate de tener el modelo User definido
 const bcrypt = require("bcryptjs");
 
 // =================== Registrar usuario ===================
