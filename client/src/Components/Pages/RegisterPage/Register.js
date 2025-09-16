@@ -3,7 +3,6 @@ import { useHistory } from "react-router-dom";
 import { register } from "../../../Services/userService";
 import { useDispatch, useSelector } from "react-redux";
 import Background from '../../Background';
-import { openAlert } from "../../../Redux/Slices/alertSlice"; // <-- import agregado
 import {
   BgContainer,
   Container,
@@ -18,6 +17,7 @@ import {
   Hr,
   Link,
 } from "./Styled";
+import { openAlert } from "../../../Redux/Slices/alertSlice";
 
 const Register = () => {
   const history = useHistory();
@@ -38,12 +38,15 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-     console.log(userInformations);
-    
-    // Validación en frontend usando openAlert
+
+    // Validación en frontend
     if (userInformations.password !== userInformations.repassword) {
-      dispatch(openAlert({ message: "Las contraseñas no coinciden", severity: "warning" }));
+      dispatch(
+        openAlert({
+          message: "Las contraseñas no coinciden",
+          severity: "warning",
+        })
+      );
       return;
     }
 
@@ -55,9 +58,20 @@ const Register = () => {
 
     try {
       await register(userData, dispatch);
+      dispatch(
+        openAlert({
+          message: "Usuario registrado exitosamente",
+          severity: "success",
+        })
+      );
       history.push("/"); // redirige después de registrar
     } catch (err) {
-      dispatch(openAlert({ message: "Error al registrarse. Verifica los datos.", severity: "error" }));
+      dispatch(
+        openAlert({
+          message: err?.response?.data?.errMessage || "Error al registrarse. Verifica los datos.",
+          severity: "error",
+        })
+      );
     }
   };
 
