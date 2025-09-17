@@ -10,9 +10,9 @@ import {
   loadFailure,
   fetchingStart,
   fetchingFinish,
-} from "../Redux/Slices/userSlice";   // 👈 CORREGIDO
+} from "../Redux/Slices/userSlice";
 
-import { openAlert } from "../Redux/Slices/alertSlice"; // 👈 CORREGIDO
+import { openAlert } from "../Redux/Slices/alertSlice";
 import setBearer from "../Utils/setBearer";
 
 // Base URL dinámico
@@ -26,19 +26,27 @@ export const register = async (data, dispatch) => {
   dispatch(registrationStart());
 
   if (data.password !== data.repassword) {
-    dispatch(openAlert({ message: "Passwords do not match!", severity: "error" }));
+    dispatch(openAlert({ message: "Las contraseñas no coinciden", severity: "warning" }));
     dispatch(registrationEnd());
     return;
   }
 
+  // 👉 Enviar solo lo que el backend espera
+  const payload = {
+    name: data.name,
+    surname: data.surname,
+    email: data.email,
+    password: data.password,
+  };
+
   try {
-    console.log("📤 Enviando datos a backend:", data); // 👈 log frontend
-    const res = await axios.post(`${baseUrl}register`, data);
-    console.log("📥 Respuesta backend:", res.data); // 👈 log frontend
+    console.log("📤 Enviando datos a backend:", payload);
+    const res = await axios.post(`${baseUrl}register`, payload);
+    console.log("📥 Respuesta backend:", res.data);
 
     dispatch(
       openAlert({
-        message: res.data.message,
+        message: res.data.message || "Usuario registrado exitosamente",
         severity: "success",
         nextRoute: "/login",
         duration: 1500,
@@ -129,5 +137,4 @@ export const getUserFromEmail = async (email, dispatch) => {
     return null;
   }
 };
-
 
