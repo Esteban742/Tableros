@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter, Switch, Route, Redirect } from "react-router-dom";
 
 import Login from "./Components/Pages/LoginPage/Login";
@@ -15,14 +15,28 @@ import Store from "./Redux/Store";
 import setBearer from "./Utils/setBearer";
 
 const App = () => {
-  useEffect(() => {
-    // 🔑 Solo cargar usuario si hay token
-    const token = localStorage.getItem("token");
-    if (!token) return;
+  const [loading, setLoading] = useState(true);
 
-    setBearer(token);
-    loadUser(Store.dispatch); // carga usuario logueado
+  useEffect(() => {
+    const initUser = async () => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        setBearer(token);
+        try {
+          await loadUser(Store.dispatch);
+        } catch (err) {
+          console.error("Error cargando usuario al iniciar la app:", err);
+          localStorage.removeItem("token"); // limpiar token inválido
+          setBearer(null);
+        }
+      }
+      setLoading(false);
+    };
+
+    initUser();
   }, []);
+
+  if (loading) return <div>Cargando usuario...</div>; // espera antes de renderizar rutas
 
   return (
     <BrowserRouter>
@@ -40,7 +54,6 @@ const App = () => {
 };
 
 export default App;
-
 
 
 
