@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
 import { login } from "../../../Services/userService";
-import setBearer from "../../../Utils/setBearer"; // ✅ importa setBearer
+import setBearer from "../../../Utils/setBearer";
 import { openAlert } from "../../../Redux/Slices/alertSlice";
 import Background from '../../Background';
 import {
@@ -25,10 +25,7 @@ const Login = () => {
   const dispatch = useDispatch();
   const { pending } = useSelector((state) => state.user);
 
-  const [userInformations, setUserInformations] = useState({
-    email: "",
-    password: "",
-  });
+  const [userInformations, setUserInformations] = useState({ email: "", password: "" });
 
   useEffect(() => {
     document.title = "Iniciar Sesión";
@@ -43,14 +40,20 @@ const Login = () => {
     }
 
     try {
-      const data = await login(userInformations, dispatch);
-      
+      // Normalizar email
+      const normalizedData = {
+        email: userInformations.email.trim().toLowerCase(),
+        password: userInformations.password,
+      };
+
+      const data = await login(normalizedData, dispatch);
+
       // Guardar token y configurar axios
       localStorage.setItem("token", data.token);
       setBearer(data.token);
 
       dispatch(openAlert({ message: "Inicio de sesión exitoso", severity: "success" }));
-      history.push("/boards"); // redirige a dashboard
+      history.push("/boards");
     } catch (err) {
       dispatch(
         openAlert({
@@ -100,4 +103,5 @@ const Login = () => {
 };
 
 export default Login;
+
 
