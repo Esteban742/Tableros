@@ -8,7 +8,7 @@ exports.register = async (req, res) => {
   try {
     console.log("📩 Datos recibidos en register:", req.body);
 
-    const { name, email, password } = req.body;
+    const { name, surname, email, password } = req.body;
 
     // Verificar si ya existe el usuario
     const existingUser = await User.findOne({ email });
@@ -22,6 +22,7 @@ exports.register = async (req, res) => {
 
     const newUser = new User({
       name,
+      surname, // 👈 agregado
       email,
       password: hashedPassword,
     });
@@ -64,7 +65,7 @@ exports.login = async (req, res) => {
 
     res.json({
       message: "Login exitoso",
-      user: { id: user._id, name: user.name, email: user.email, token },
+      user: { id: user._id, name: user.name, surname: user.surname, email: user.email, token },
     });
   } catch (error) {
     console.log("❌ Error en login:", error);
@@ -112,4 +113,3 @@ exports.getUserWithMail = async (req, res) => {
     res.status(500).json({ errMessage: "Error al obtener usuario por email" });
   }
 };
-
