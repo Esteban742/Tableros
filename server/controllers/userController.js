@@ -5,6 +5,10 @@ const userService = require("../services/userService");
 
 // =================== Registrar usuario ===================
 const register = async (req, res) => {
+
+    // 👇 Aquí el log para verificar que sí llegan los datos del frontend
+  console.log("📩 Datos recibidos en el backend:", req.body);
+  
   const { name, surname, email, password } = req.body;
 
   if (!(name && surname && email && password)) {
