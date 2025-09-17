@@ -21,27 +21,27 @@ const App = () => {
   const [loadingBoards, setLoadingBoards] = useState(false);
 
   useEffect(() => {
-    // 🔑 Configurar token desde localStorage al iniciar la app
+    // 🔑 Configurar token desde localStorage
     const token = localStorage.getItem("token");
     if (token) {
       setBearer(token);
-      loadUser(Store.dispatch); // Cargar usuario logueado en Redux
+
+      loadUser(Store.dispatch).catch((err) => {
+        console.error("❌ Error cargando usuario:", err);
+        localStorage.removeItem("token");
+        setBearer(null);
+      });
     }
 
-    // 🚀 Test opcional: verificar backend y obtener tableros
+    // 🚀 Opcional: probar backend y obtener tableros
     const testBackend = async () => {
-      if (!token) return; // omite si no hay token
+      if (!token) return;
       setLoadingBoards(true);
       try {
-        const res = await axios.get(
-          "https://tableros-53ww.onrender.com/api/boards"
-        );
+        const res = await axios.get("https://tableros-53ww.onrender.com/api/boards");
         console.log("✅ Tableros obtenidos del backend:", res.data);
       } catch (error) {
-        console.error(
-          "❌ Error comunicándose con el backend:",
-          error.response?.data || error.message
-        );
+        console.error("❌ Error comunicándose con el backend:", error.response?.data || error.message);
       } finally {
         setLoadingBoards(false);
       }
@@ -66,6 +66,7 @@ const App = () => {
 };
 
 export default App;
+
 
 
 
