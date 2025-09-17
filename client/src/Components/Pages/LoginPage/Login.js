@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
 import { login, loadUser } from "../../../Services/userService";
@@ -27,24 +27,6 @@ const Login = () => {
 
   const [userInformations, setUserInformations] = useState({ email: "", password: "" });
 
-  useEffect(() => {
-    document.title = "Iniciar Sesión";
-
-    const token = localStorage.getItem("token");
-    if (token) {
-      setBearer(token);
-
-      // Esperar a que loadUser termine antes de renderizar
-      (async () => {
-        try {
-          await loadUser(dispatch);
-        } catch (err) {
-          console.error("Error cargando usuario al iniciar la app:", err);
-        }
-      })();
-    }
-  }, [dispatch]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -59,26 +41,20 @@ const Login = () => {
         password: userInformations.password,
       };
 
-      // Llamar a login y recibir el usuario logueado
       const res = await login(normalizedData, dispatch);
 
       if (!res || !res.user || !res.user.token) {
         throw new Error("No se pudo iniciar sesión correctamente");
       }
 
-      // Guardar token en localStorage
+      // Guardar token y configurar Axios
       localStorage.setItem("token", res.user.token);
-
-      // Configurar Axios con el token
       setBearer(res.user.token);
 
-      // Cargar usuario en Redux y esperar a que termine
+      // Cargar usuario en Redux antes de redirigir
       await loadUser(dispatch);
 
-      // Mostrar alerta de éxito
       dispatch(openAlert({ message: "Inicio de sesión exitoso", severity: "success" }));
-
-      // Redirigir al dashboard
       history.push("/boards");
     } catch (err) {
       dispatch(
@@ -92,9 +68,7 @@ const Login = () => {
 
   return (
     <>
-      <BgContainer>
-        <Background />
-      </BgContainer>
+      <BgContainer><Background /></BgContainer>
       <Container>
         <TrelloIconContainer onClick={() => history.push("/")}>
           <Icon src="https://i.postimg.cc/6Qj1y8hB/logok.png" />
@@ -117,9 +91,7 @@ const Login = () => {
                 value={userInformations.password}
                 onChange={(e) => setUserInformations({ ...userInformations, password: e.target.value })}
               />
-              <Button type="submit" disabled={pending}>
-                Ingresar
-              </Button>
+              <Button type="submit" disabled={pending}>Ingresar</Button>
               <Hr />
               <Link fontSize="0.85rem" onClick={() => history.push("/register")}>
                 ¿No tienes una cuenta? Registrarse
@@ -133,5 +105,6 @@ const Login = () => {
 };
 
 export default Login;
+
 
 
