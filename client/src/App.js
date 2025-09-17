@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Switch, Route, Redirect } from "react-router-dom";
 
-import Index from "./Components/Pages/IndexPage/Index";
 import Login from "./Components/Pages/LoginPage/Login";
 import Register from "./Components/Pages/RegisterPage/Register";
 import Boards from "./Components/Pages/BoardsPage/Boards";
@@ -15,36 +14,14 @@ import { loadUser } from "./Services/userService";
 import Store from "./Redux/Store";
 import setBearer from "./Utils/setBearer";
 
-import axios from "axios";
-
 const App = () => {
-  const [loadingBoards, setLoadingBoards] = useState(false);
-  const [userLoaded, setUserLoaded] = useState(false);
-
   useEffect(() => {
-    const initApp = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) return setUserLoaded(false);
+    // 🔑 Solo cargar usuario si hay token
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-      setBearer(token);
-
-      try {
-        // Cargar usuario y esperar a que termine
-        await loadUser(Store.dispatch);
-        setUserLoaded(true);
-
-        // Ahora sí podemos llamar a boards
-        setLoadingBoards(true);
-        const res = await axios.get("https://tableros-53ww.onrender.com/api/boards");
-        console.log("✅ Tableros obtenidos del backend:", res.data);
-      } catch (error) {
-        console.error("❌ Error inicializando app:", error.response?.data || error.message);
-      } finally {
-        setLoadingBoards(false);
-      }
-    };
-
-    initApp();
+    setBearer(token);
+    loadUser(Store.dispatch); // carga usuario logueado
   }, []);
 
   return (
@@ -58,7 +35,6 @@ const App = () => {
         <FreeRoute exact path="/register" component={Register} />
         <Route path="*" render={() => <Redirect to="/" />} />
       </Switch>
-      {loadingBoards && <div>Cargando tableros...</div>}
     </BrowserRouter>
   );
 };
