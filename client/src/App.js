@@ -23,18 +23,31 @@ const App = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) setBearer(token);
+
+    // cargar datos de usuario en Redux
     loadUser(Store.dispatch);
 
+    // 🚀 solo probar boards si hay token
     const testBackend = async () => {
-      if (!token) return console.warn("No token guardado, omitiendo prueba de backend.");
+      if (!token) {
+        console.warn("No token guardado, omitiendo prueba de backend.");
+        return;
+      }
       setLoadingBoards(true);
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/boards`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        console.log("Tableros obtenidos del backend:", res.data);
+        // 👇 usa directamente tu dominio + api
+        const res = await axios.get(
+          "https://tableros-53ww.onrender.com/api/boards",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log("✅ Tableros obtenidos del backend:", res.data);
       } catch (error) {
-        console.error("Error comunicándose con el backend:", error.response?.data || error.message);
+        console.error(
+          "❌ Error comunicándose con el backend:",
+          error.response?.data || error.message
+        );
       } finally {
         setLoadingBoards(false);
       }
