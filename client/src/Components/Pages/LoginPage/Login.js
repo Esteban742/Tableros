@@ -29,11 +29,19 @@ const Login = () => {
 
   useEffect(() => {
     document.title = "Iniciar Sesión";
-    // Configurar token si ya existe
+
     const token = localStorage.getItem("token");
     if (token) {
       setBearer(token);
-      loadUser(dispatch); // carga usuario si hay token
+
+      // Esperar a que loadUser termine antes de renderizar
+      (async () => {
+        try {
+          await loadUser(dispatch);
+        } catch (err) {
+          console.error("Error cargando usuario al iniciar la app:", err);
+        }
+      })();
     }
   }, [dispatch]);
 
@@ -58,18 +66,17 @@ const Login = () => {
         throw new Error("No se pudo iniciar sesión correctamente");
       }
 
-     // Guardar token en localStorage
-     localStorage.setItem("token", res.user.token);
+      // Guardar token en localStorage
+      localStorage.setItem("token", res.user.token);
 
-     // Configurar Axios con el token
-     setBearer(res.user.token);
+      // Configurar Axios con el token
+      setBearer(res.user.token);
 
-     // Cargar usuario en Redux y esperar a que termine
-     await loadUser(dispatch);
+      // Cargar usuario en Redux y esperar a que termine
+      await loadUser(dispatch);
 
-     // Mostrar alerta de éxito
-     dispatch(openAlert({ message: "Inicio de sesión exitoso", severity: "success" }));
-
+      // Mostrar alerta de éxito
+      dispatch(openAlert({ message: "Inicio de sesión exitoso", severity: "success" }));
 
       // Redirigir al dashboard
       history.push("/boards");
@@ -85,7 +92,9 @@ const Login = () => {
 
   return (
     <>
-      <BgContainer><Background /></BgContainer>
+      <BgContainer>
+        <Background />
+      </BgContainer>
       <Container>
         <TrelloIconContainer onClick={() => history.push("/")}>
           <Icon src="https://i.postimg.cc/6Qj1y8hB/logok.png" />
@@ -108,7 +117,9 @@ const Login = () => {
                 value={userInformations.password}
                 onChange={(e) => setUserInformations({ ...userInformations, password: e.target.value })}
               />
-              <Button type="submit" disabled={pending}>Ingresar</Button>
+              <Button type="submit" disabled={pending}>
+                Ingresar
+              </Button>
               <Hr />
               <Link fontSize="0.85rem" onClick={() => history.push("/register")}>
                 ¿No tienes una cuenta? Registrarse
@@ -122,6 +133,5 @@ const Login = () => {
 };
 
 export default Login;
-
 
 
