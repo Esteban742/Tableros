@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
-import { login } from "../../../Services/userService";
+import { login, loadUser } from "../../../Services/userService";
 import setBearer from "../../../Utils/setBearer";
 import { openAlert } from "../../../Redux/Slices/alertSlice";
-import Background from '../../Background';
+import Background from "../../Background";
 import {
   BgContainer,
   Container,
@@ -29,7 +29,13 @@ const Login = () => {
 
   useEffect(() => {
     document.title = "Iniciar Sesión";
-  }, []);
+    // Configurar token si ya existe
+    const token = localStorage.getItem("token");
+    if (token) {
+      setBearer(token);
+      loadUser(dispatch); // carga usuario si hay token
+    }
+  }, [dispatch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,20 +51,28 @@ const Login = () => {
         password: userInformations.password,
       };
 
+      // Llamar a login y recibir el usuario logueado
       const res = await login(normalizedData, dispatch);
-      const data = res.user;
 
-      // Guardar token y configurar axios
-      localStorage.setItem("token", data.token);
-      setBearer(data.token);
+      if (!res || !res.user || !res.user.token) {
+        throw new Error("No se pudo iniciar sesión correctamente");
+      }
+
+      // Guardar token y configurar Axios
+      localStorage.setItem("token", res.user.token);
+      setBearer(res.user.token);
+
+      // Cargar usuario en Redux
+      loadUser(dispatch);
 
       dispatch(openAlert({ message: "Inicio de sesión exitoso", severity: "success" }));
 
+      // Redirigir al dashboard
       history.push("/boards");
     } catch (err) {
       dispatch(
         openAlert({
-          message: err?.response?.data?.errMessage || "Error al iniciar sesión. Verifica tus credenciales.",
+          message: err?.response?.data?.errMessage || err.message || "Error al iniciar sesión",
           severity: "error",
         })
       );
@@ -104,5 +118,6 @@ const Login = () => {
 };
 
 export default Login;
+
 
 
