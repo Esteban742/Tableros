@@ -1,14 +1,12 @@
-// middlewares/tokenMiddleware.js
 const jwt = require("jsonwebtoken");
 
 // Rutas que NO requieren token
 const pathsToExclude = [
-  { url: "/api/users/register", methods: ["POST"] },
-  { url: "/api/users/login", methods: ["POST"] },
   { url: "/", methods: ["GET"] },
   { url: /^\/static\/.*/, methods: ["GET"] },
   { url: "/favicon.ico", methods: ["GET"] },
   { url: "/manifest.json", methods: ["GET"] },
+  // NOTA: Ya no excluimos register/login
 ];
 
 const tokenMiddleware = (req, res, next) => {
@@ -32,17 +30,19 @@ const tokenMiddleware = (req, res, next) => {
     return res.status(401).json({ message: "No token proporcionado" });
   }
 
-  const token = authHeader.split(" ")[1];
-  if (!token) {
-    console.log(`[TokenMiddleware] Token malformado o faltante en ${req.method} ${reqPath}`);
-    return res.status(401).json({ message: "Token malformado o faltante" });
+  const parts = authHeader.split(" ");
+  if (parts.length !== 2 || parts[0] !== "Bearer") {
+    console.log(`[TokenMiddleware] Token malformado en ${req.method} ${reqPath}`);
+    return res.status(401).json({ message: "Token malformado" });
   }
 
+  const token = parts[1];
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decoded.id) {
+
+    if (!decoded || !decoded.id) {
       console.log(`[TokenMiddleware] Token inválido: falta id en payload`, decoded);
-      return res.status(401).json({ message: "Token inválido: falta id" });
+      return res.status(401).json({ message: "Token inválido" });
     }
 
     req.user = { id: decoded.id };
@@ -55,6 +55,7 @@ const tokenMiddleware = (req, res, next) => {
 };
 
 module.exports = tokenMiddleware;
+
 
 
 
