@@ -21,19 +21,14 @@ const App = () => {
   const [loadingBoards, setLoadingBoards] = useState(false);
 
   useEffect(() => {
-    // 🔑 Configurar token desde localStorage
+    // 🔑 Configurar token desde localStorage al iniciar la app
     const token = localStorage.getItem("token");
     if (token) {
-      setBearer(token);
-
-      loadUser(Store.dispatch).catch((err) => {
-        console.error("❌ Error cargando usuario:", err);
-        localStorage.removeItem("token");
-        setBearer(null);
-      });
+      setBearer(token); // 🔑 Primero seteamos el header
+      loadUser(Store.dispatch); // luego cargamos usuario logueado
     }
 
-    // 🚀 Opcional: probar backend y obtener tableros
+    // 🚀 Test opcional: verificar backend y obtener tableros
     const testBackend = async () => {
       if (!token) return;
       setLoadingBoards(true);
@@ -66,6 +61,7 @@ const App = () => {
 };
 
 export default App;
+
 
 
 
