@@ -30,10 +30,7 @@ const App = () => {
 
     // 🚀 Test opcional: verificar backend y obtener tableros
     const testBackend = async () => {
-      if (!token) {
-        console.warn("No token guardado, omitiendo prueba de backend.");
-        return;
-      }
+      if (!token) return; // omite si no hay token
       setLoadingBoards(true);
       try {
         const res = await axios.get(
