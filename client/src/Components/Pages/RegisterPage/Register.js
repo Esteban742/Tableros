@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import { register } from "../../../Services/userService";
 import { useDispatch, useSelector } from "react-redux";
-import Background from '../../Background';
+import Background from "../../Background";
 import {
   BgContainer,
   Container,
@@ -40,31 +40,36 @@ const Register = () => {
     e.preventDefault();
 
     if (userInformations.password !== userInformations.repassword) {
-      dispatch(openAlert({
-        message: "Las contraseñas no coinciden",
-        severity: "warning",
-      }));
+      dispatch(
+        openAlert({
+          message: "Las contraseñas no coinciden",
+          severity: "warning",
+        })
+      );
       return;
     }
 
+    // 👉 payload coherente con backend y userService
     const userData = {
-      username: `${userInformations.name} ${userInformations.surname}`,
+      name: userInformations.name,
+      surname: userInformations.surname,
       email: userInformations.email,
       password: userInformations.password,
+      repassword: userInformations.repassword,
     };
 
     try {
-      await register(userData, dispatch); // guarda token automáticamente
-      dispatch(openAlert({
-        message: "Usuario registrado exitosamente",
-        severity: "success",
-      }));
-      history.push("/boards"); // redirige al dashboard
+      await register(userData, dispatch);
+      history.push("/login"); // 👈 lo llevamos al login (como configuraste en userService)
     } catch (err) {
-      dispatch(openAlert({
-        message: err?.response?.data?.errMessage || "Error al registrarse. Verifica los datos.",
-        severity: "error",
-      }));
+      dispatch(
+        openAlert({
+          message:
+            err?.response?.data?.errMessage ||
+            "Error al registrarse. Verifica los datos.",
+          severity: "error",
+        })
+      );
     }
   };
 
@@ -87,7 +92,10 @@ const Register = () => {
                 required
                 value={userInformations.name}
                 onChange={(e) =>
-                  setUserInformations({ ...userInformations, name: e.target.value })
+                  setUserInformations({
+                    ...userInformations,
+                    name: e.target.value,
+                  })
                 }
               />
               <Input
@@ -96,7 +104,10 @@ const Register = () => {
                 required
                 value={userInformations.surname}
                 onChange={(e) =>
-                  setUserInformations({ ...userInformations, surname: e.target.value })
+                  setUserInformations({
+                    ...userInformations,
+                    surname: e.target.value,
+                  })
                 }
               />
               <Input
@@ -105,7 +116,10 @@ const Register = () => {
                 required
                 value={userInformations.email}
                 onChange={(e) =>
-                  setUserInformations({ ...userInformations, email: e.target.value })
+                  setUserInformations({
+                    ...userInformations,
+                    email: e.target.value,
+                  })
                 }
               />
               <Input
@@ -114,7 +128,10 @@ const Register = () => {
                 required
                 value={userInformations.password}
                 onChange={(e) =>
-                  setUserInformations({ ...userInformations, password: e.target.value })
+                  setUserInformations({
+                    ...userInformations,
+                    password: e.target.value,
+                  })
                 }
               />
               <Input
@@ -123,12 +140,20 @@ const Register = () => {
                 required
                 value={userInformations.repassword}
                 onChange={(e) =>
-                  setUserInformations({ ...userInformations, repassword: e.target.value })
+                  setUserInformations({
+                    ...userInformations,
+                    repassword: e.target.value,
+                  })
                 }
               />
-              <Button type="submit" disabled={pending}>Registrar</Button>
+              <Button type="submit" disabled={pending}>
+                Registrar
+              </Button>
               <Hr />
-              <Link fontSize="0.85rem" onClick={() => history.push("/login")}>
+              <Link
+                fontSize="0.85rem"
+                onClick={() => history.push("/login")}
+              >
                 ¿Ya tienes una cuenta? Iniciar Sesión
               </Link>
             </Form>
