@@ -13,6 +13,12 @@ const tokenMiddleware = require("./middlewares/verifyTokenWrapper");
 const app = express();
 app.use(express.json());
 
+// 👇 Logger para ver todas las peticiones que llegan al backend
+app.use((req, res, next) => {
+  console.log("➡️ Petición entrante:", req.method, req.url);
+  next();
+});
+
 // CORS
 app.use(cors({
   origin: process.env.FRONTEND_URL || "https://tableros-53ww.onrender.com",
