@@ -78,25 +78,37 @@ exports.getUser = async (req, res) => {
   try {
     console.log("🔑 Verificando usuario con token:", req.user);
     
-
+    // ✅ Validación adicional (por si acaso)
     if (!req.user || !req.user.id) {
       console.log("❌ Token inválido o req.user undefined");
-      return res.status(401).json({ errMessage: "Token inválido o expirado" });
+      return res.status(401).json({ 
+        success: false,
+        errMessage: "Token inválido o expirado" 
+      });
     }
     
     const user = await User.findById(req.user.id).select("-password");
     
     if (!user) {
       console.log("❌ Usuario no encontrado con ID:", req.user.id);
-      return res.status(404).json({ errMessage: "Usuario no encontrado" });
+      return res.status(404).json({ 
+        success: false,
+        errMessage: "Usuario no encontrado" 
+      });
     }
     
     console.log("✅ Usuario encontrado:", user.email);
-    res.json(user);
+    res.json({
+      success: true,
+      user: user
+    });
     
   } catch (error) {
     console.log("❌ Error en getUser:", error);
-    res.status(500).json({ errMessage: "Error al obtener usuario" });
+    res.status(500).json({ 
+      success: false,
+      errMessage: "Error al obtener usuario" 
+    });
   }
 };
 
