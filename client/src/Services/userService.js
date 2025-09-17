@@ -32,7 +32,10 @@ export const register = async (data, dispatch) => {
   }
 
   try {
+    console.log("📤 Enviando datos a backend:", data); // 👈 log frontend
     const res = await axios.post(`${baseUrl}register`, data);
+    console.log("📥 Respuesta backend:", res.data); // 👈 log frontend
+
     dispatch(
       openAlert({
         message: res.data.message,
@@ -42,6 +45,7 @@ export const register = async (data, dispatch) => {
       })
     );
   } catch (error) {
+    console.log("❌ Error en register frontend:", error.response?.data || error.message);
     dispatch(
       openAlert({
         message: error?.response?.data?.errMessage || error.message,
