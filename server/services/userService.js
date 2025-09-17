@@ -23,6 +23,9 @@ const registerUser = async ({ name, surname, email, password }) => {
 
   await user.save();
 
+    // 👇 Aquí puedes poner un log para confirmar
+  console.log("✅ Usuario registrado en la BD:", user);
+
   // Retornar solo la información pública
   const { _id } = user;
   return { message: "Usuario registrado exitosamente", user: { _id, name, surname, email } };
