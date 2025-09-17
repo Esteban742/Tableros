@@ -1,59 +1,45 @@
-import LoadingScreen from "../../LoadingScreen";
+
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { getBoards } from "../../../Services/boardsService";
-import Navbar from "../../Navbar";
-import { Container, Wrapper, Title, Board, AddBoard } from "./Styled";
-import CreateBoard from "../../Modals/CreateBoardModal/CreateBoard";
-import { useHistory } from "react-router";
+import { useSelector } from "react-redux";
+import axios from "axios";
+import setBearer from "../../../Utils/setBearer";
 
 const Boards = () => {
-  const dispatch = useDispatch();
-  const history = useHistory();
-  const { pending, boardsData } = useSelector((state) => state.boards);
-  const [openModal, setOpenModal] = useState(false);
-  const [searchString, setSearchString] = useState('');
-  const handleModalClose = () => {
-    setOpenModal(false);
-  };
-
-  const handleClick = (e) => {
-   history.push(`/board/${e.target.id}`)
-  }
+  const [boards, setBoards] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const user = useSelector((state) => state.user.currentUser);
 
   useEffect(() => {
-    getBoards(false,dispatch);
-  }, [dispatch]);
+    const fetchBoards = async () => {
+      if (!user || !user.token) {
+        setLoading(false);
+        return;
+      }
 
-  useEffect(() => {
-    document.title = "Tableros"
-  }, [])
+      setBearer(user.token); // aseguramos que Axios tenga el token
+
+      try {
+        const res = await axios.get("https://tableros-53ww.onrender.com/api/boards");
+        setBoards(res.data);
+      } catch (error) {
+        console.error("❌ Error al cargar tableros:", error.response?.data || error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBoards();
+  }, [user]);
+
+  if (loading) return <div>Cargando tableros...</div>;
 
   return (
-    <>
-      {pending && <LoadingScreen />}
-      <Container>        
-        <Navbar searchString={searchString} setSearchString={setSearchString} />
-        <Wrapper>
-          <Title>Tus Tableros</Title>
-          {!pending &&
-            boardsData.length>0 &&
-            boardsData.filter(item=>searchString?item.title.toLowerCase().includes(searchString.toLowerCase()):true).map((item) => {
-              return (
-                <Board key={item._id} link={item.backgroundImageLink} isImage={item.isImage} id={item._id} onClick={(e)=>handleClick(e)}>
-                  {item.title}
-                </Board>
-              );
-            })}
-          {!pending && (
-            <AddBoard onClick={() => setOpenModal(true)}>
-              Crear nuevo tablero
-            </AddBoard>
-          )}
-          {openModal && <CreateBoard callback={handleModalClose} />}
-        </Wrapper>
-      </Container>
-    </>
+    <div>
+      <h1>Mis Tableros</h1>
+      {boards.map((board) => (
+        <div key={board._id}>{board.title}</div>
+      ))}
+    </div>
   );
 };
 
