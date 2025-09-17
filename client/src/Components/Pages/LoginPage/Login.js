@@ -27,8 +27,11 @@ const Login = () => {
 
   const [userInformations, setUserInformations] = useState({ email: "", password: "" });
 
+  // Configurar token de localStorage al iniciar la app
   useEffect(() => {
     document.title = "Iniciar Sesión";
+    const token = localStorage.getItem("token");
+    if (token) setBearer(token);
   }, []);
 
   const handleSubmit = async (e) => {
@@ -46,15 +49,17 @@ const Login = () => {
         password: userInformations.password,
       };
 
+      // Llamar a login y extraer user
       const res = await login(normalizedData, dispatch);
-      const data = res.user; // ahora data tiene id, email, token...
-
+      const data = res.user;
 
       // Guardar token y configurar axios
       localStorage.setItem("token", data.token);
       setBearer(data.token);
 
       dispatch(openAlert({ message: "Inicio de sesión exitoso", severity: "success" }));
+
+      // Redirigir al dashboard
       history.push("/boards");
     } catch (err) {
       dispatch(
