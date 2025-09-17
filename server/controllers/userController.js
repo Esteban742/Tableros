@@ -77,16 +77,23 @@ exports.login = async (req, res) => {
 exports.getUser = async (req, res) => {
   try {
     console.log("🔑 Verificando usuario con token:", req.user);
+    
 
+    if (!req.user || !req.user.id) {
+      console.log("❌ Token inválido o req.user undefined");
+      return res.status(401).json({ errMessage: "Token inválido o expirado" });
+    }
+    
     const user = await User.findById(req.user.id).select("-password");
-
+    
     if (!user) {
       console.log("❌ Usuario no encontrado con ID:", req.user.id);
       return res.status(404).json({ errMessage: "Usuario no encontrado" });
     }
-
+    
     console.log("✅ Usuario encontrado:", user.email);
     res.json(user);
+    
   } catch (error) {
     console.log("❌ Error en getUser:", error);
     res.status(500).json({ errMessage: "Error al obtener usuario" });
