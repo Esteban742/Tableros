@@ -46,7 +46,9 @@ const Login = () => {
         password: userInformations.password,
       };
 
-      const data = await login(normalizedData, dispatch);
+      const res = await login(normalizedData, dispatch);
+      const data = res.user; // ahora data tiene id, email, token...
+
 
       // Guardar token y configurar axios
       localStorage.setItem("token", data.token);
