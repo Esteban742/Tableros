@@ -16,10 +16,17 @@ import setBearer from "./Utils/setBearer";
 
 const App = () => {
   useEffect(() => {
+    
     const token = localStorage.getItem("token");
-    if (!token) return; // No hay token, no hacer nada
+    
+    console.log("Token antes de loadUser:", token);
+    
+    if (!token) return;
+    // No hay token, no hacer nada
 
     setBearer(token); // primero setear el header
+
+    console.log("Axios headers:", axios.defaults.headers.common);
 
     // Cargar usuario y manejar errores sin romper la app
     (async () => {
