@@ -41,19 +41,19 @@ const Login = () => {
         password: userInformations.password,
       };
 
+      // 🔑 Login en backend
       const res = await login(normalizedData, dispatch);
 
-      if (!res || !res.user || !res.user.token) {
-        throw new Error("No se pudo iniciar sesión correctamente");
-      }
+      if (!res?.user?.token) throw new Error("No se pudo iniciar sesión correctamente");
 
-      // Guardar token y configurar Axios
+      // 🔑 Guardar token y configurar Axios
       localStorage.setItem("token", res.user.token);
       setBearer(res.user.token);
 
-      // Cargar usuario en Redux antes de redirigir
+      // 🔑 Cargar usuario logueado en Redux
       await loadUser(dispatch);
 
+      // ✅ Mostrar alerta y redirigir
       dispatch(openAlert({ message: "Inicio de sesión exitoso", severity: "success" }));
       history.push("/boards");
     } catch (err) {
