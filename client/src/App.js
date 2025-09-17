@@ -21,13 +21,14 @@ const App = () => {
   const [loadingBoards, setLoadingBoards] = useState(false);
 
   useEffect(() => {
+    // 🔑 Configurar token desde localStorage al iniciar la app
     const token = localStorage.getItem("token");
-    if (token) setBearer(token);
+    if (token) {
+      setBearer(token);
+      loadUser(Store.dispatch); // Cargar usuario logueado en Redux
+    }
 
-    // cargar datos de usuario en Redux
-    loadUser(Store.dispatch);
-
-    // 🚀 solo probar boards si hay token
+    // 🚀 Test opcional: verificar backend y obtener tableros
     const testBackend = async () => {
       if (!token) {
         console.warn("No token guardado, omitiendo prueba de backend.");
@@ -35,12 +36,8 @@ const App = () => {
       }
       setLoadingBoards(true);
       try {
-        // 👇 usa directamente tu dominio + api
         const res = await axios.get(
-          "https://tableros-53ww.onrender.com/api/boards",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          "https://tableros-53ww.onrender.com/api/boards"
         );
         console.log("✅ Tableros obtenidos del backend:", res.data);
       } catch (error) {
