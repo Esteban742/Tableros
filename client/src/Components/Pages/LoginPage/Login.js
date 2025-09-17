@@ -58,14 +58,18 @@ const Login = () => {
         throw new Error("No se pudo iniciar sesión correctamente");
       }
 
-      // Guardar token y configurar Axios
-      localStorage.setItem("token", res.user.token);
-      setBearer(res.user.token);
+     // Guardar token en localStorage
+     localStorage.setItem("token", res.user.token);
 
-      // Cargar usuario en Redux
-      loadUser(dispatch);
+     // Configurar Axios con el token
+     setBearer(res.user.token);
 
-      dispatch(openAlert({ message: "Inicio de sesión exitoso", severity: "success" }));
+     // Cargar usuario en Redux y esperar a que termine
+     await loadUser(dispatch);
+
+     // Mostrar alerta de éxito
+     dispatch(openAlert({ message: "Inicio de sesión exitoso", severity: "success" }));
+
 
       // Redirigir al dashboard
       history.push("/boards");
