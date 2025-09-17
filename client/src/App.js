@@ -19,29 +19,32 @@ import axios from "axios";
 
 const App = () => {
   const [loadingBoards, setLoadingBoards] = useState(false);
+  const [userLoaded, setUserLoaded] = useState(false);
 
   useEffect(() => {
-    // 🔑 Configurar token desde localStorage al iniciar la app
-    const token = localStorage.getItem("token");
-    if (token) {
-      setBearer(token); // 🔑 Primero seteamos el header
-      loadUser(Store.dispatch); // luego cargamos usuario logueado
-    }
+    const initApp = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return setUserLoaded(false);
 
-    // 🚀 Test opcional: verificar backend y obtener tableros
-    const testBackend = async () => {
-      if (!token) return;
-      setLoadingBoards(true);
+      setBearer(token);
+
       try {
+        // Cargar usuario y esperar a que termine
+        await loadUser(Store.dispatch);
+        setUserLoaded(true);
+
+        // Ahora sí podemos llamar a boards
+        setLoadingBoards(true);
         const res = await axios.get("https://tableros-53ww.onrender.com/api/boards");
         console.log("✅ Tableros obtenidos del backend:", res.data);
       } catch (error) {
-        console.error("❌ Error comunicándose con el backend:", error.response?.data || error.message);
+        console.error("❌ Error inicializando app:", error.response?.data || error.message);
       } finally {
         setLoadingBoards(false);
       }
     };
-    testBackend();
+
+    initApp();
   }, []);
 
   return (
@@ -61,7 +64,6 @@ const App = () => {
 };
 
 export default App;
-
 
 
 
