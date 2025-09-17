@@ -1,86 +1,114 @@
-// server/controllers/userController.js
-const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const userService = require("../services/userService");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-// =================== Registrar usuario ===================
-const register = async (req, res) => {
-
-    // 👇 Aquí el log para verificar que sí llegan los datos del frontend
-  console.log("📩 Datos recibidos en el backend:", req.body);
-  
-  const { name, surname, email, password } = req.body;
-
-  if (!(name && surname && email && password)) {
-    return res
-      .status(400)
-      .send({ errMessage: "Por favor llena todos los campos requeridos" });
-  }
-
+// =================== Registro ===================
+exports.register = async (req, res) => {
   try {
-    const result = await userService.registerUser(req.body);
-    return res.status(201).send(result);
-  } catch (err) {
-    return res.status(400).send(err);
-  }
-};
+    console.log("📩 Datos recibidos en register:", req.body);
 
-// =================== Login usuario ===================
-const login = async (req, res) => {
-  const { email, password } = req.body;
+    const { name, email, password } = req.body;
 
-  if (!(email && password)) {
-    return res.status(400).send({ errMessage: "Faltan credenciales" });
-  }
+    // Verificar si ya existe el usuario
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      console.log("⚠️ Usuario ya existe:", email);
+      return res.status(400).json({ errMessage: "El usuario ya existe" });
+    }
 
-  try {
-    const user = await userService.loginUser({ email, password });
+    // Hashear contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generar token JWT
-    const token = jwt.sign(
-      { userId: user._id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    // Responder sin enviar el password
-    const { _id, name, surname } = user;
-    return res.status(200).send({
-      message: "Login exitoso",
-      token,
-      user: { _id, name, surname, email },
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
     });
-  } catch (err) {
-    return res.status(401).send(err);
+
+    await newUser.save();
+    console.log("✅ Usuario guardado en DB:", newUser);
+
+    res.status(201).json({ message: "Usuario registrado correctamente" });
+  } catch (error) {
+    console.log("❌ Error en register:", error);
+    res.status(500).json({ errMessage: "Error al registrar usuario" });
   }
 };
 
-// =================== Obtener usuario por ID ===================
-const getUser = async (req, res) => {
+// =================== Login ===================
+exports.login = async (req, res) => {
   try {
-    const user = await userService.getUser(req.params.id);
-    const { _id, name, surname, email } = user;
-    return res.status(200).send({ _id, name, surname, email });
-  } catch (err) {
-    return res.status(404).send(err);
+    console.log("📩 Datos recibidos en login:", req.body);
+
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      console.log("❌ Usuario no encontrado:", email);
+      return res.status(400).json({ errMessage: "Usuario no encontrado" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      console.log("❌ Contraseña incorrecta para:", email);
+      return res.status(400).json({ errMessage: "Credenciales inválidas" });
+    }
+
+    // Generar token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
+    console.log("✅ Login exitoso:", email);
+
+    res.json({
+      message: "Login exitoso",
+      user: { id: user._id, name: user.name, email: user.email, token },
+    });
+  } catch (error) {
+    console.log("❌ Error en login:", error);
+    res.status(500).json({ errMessage: "Error al iniciar sesión" });
+  }
+};
+
+// =================== Obtener usuario con token ===================
+exports.getUser = async (req, res) => {
+  try {
+    console.log("🔑 Verificando usuario con token:", req.user);
+
+    const user = await User.findById(req.user.id).select("-password");
+
+    if (!user) {
+      console.log("❌ Usuario no encontrado con ID:", req.user.id);
+      return res.status(404).json({ errMessage: "Usuario no encontrado" });
+    }
+
+    console.log("✅ Usuario encontrado:", user.email);
+    res.json(user);
+  } catch (error) {
+    console.log("❌ Error en getUser:", error);
+    res.status(500).json({ errMessage: "Error al obtener usuario" });
   }
 };
 
 // =================== Obtener usuario por email ===================
-const getUserWithMail = async (req, res) => {
+exports.getUserWithMail = async (req, res) => {
   try {
-    const user = await userService.getUserWithMail(req.params.email);
-    const { _id, name, surname, email } = user;
-    return res.status(200).send({ _id, name, surname, email });
-  } catch (err) {
-    return res.status(404).send(err);
-  }
-};
+    console.log("📩 Buscando usuario con email:", req.body.email);
 
-module.exports = {
-  register,
-  login,
-  getUser,
-  getUserWithMail,
+    const { email } = req.body;
+    const user = await User.findOne({ email }).select("-password");
+
+    if (!user) {
+      console.log("❌ Usuario no encontrado con email:", email);
+      return res.status(404).json({ errMessage: "Usuario no encontrado" });
+    }
+
+    console.log("✅ Usuario encontrado con email:", email);
+    res.json(user);
+  } catch (error) {
+    console.log("❌ Error en getUserWithMail:", error);
+    res.status(500).json({ errMessage: "Error al obtener usuario por email" });
+  }
 };
 
