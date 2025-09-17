@@ -89,6 +89,7 @@ export const login = async ({ email, password }, dispatch) => {
   }
 };
 
+
 // =================== Cargar usuario ===================
 export const loadUser = async (dispatch) => {
   dispatch(loadStart());
@@ -96,18 +97,22 @@ export const loadUser = async (dispatch) => {
   const token = localStorage.getItem("token");
   if (!token) {
     dispatch(loadFailure());
-    return;
+    return null; // No hay token, no cargar
   }
 
-  setBearer(token);
+  setBearer(token); // Asegurarse de setear el header antes de la petición
 
   try {
     const res = await axios.get(`${baseUrl}get-user`);
     dispatch(loadSuccess({ user: res.data }));
+    return res.data; // devolver usuario
   } catch (error) {
+    console.error("❌ Error en loadUser:", error.response?.data || error.message);
     dispatch(loadFailure());
+    return null;
   }
 };
+
 
 // =================== Obtener usuario por email ===================
 export const getUserFromEmail = async (email, dispatch) => {
