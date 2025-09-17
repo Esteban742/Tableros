@@ -32,7 +32,7 @@ app.get("*", (req, res) => {
 });
 
 // Conexión MongoDB
-mongoose.connect(process.env.MONGO_URL)
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Conectado a MongoDB"))
   .catch(err => console.log("MongoDB error:", err));
 
