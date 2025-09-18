@@ -61,3 +61,22 @@ export const userSlice = createSlice({
   },
 });
 
+
+// 🔹 Agregar esta línea al final
+export const {
+  registrationStart,
+  registrationEnd,
+  loginStart,
+  loginFailure,
+  loginSuccess,
+  loadStart,
+  loadSuccess,
+  loadFailure,
+  logout,
+  fetchingStart,
+  fetchingFinish,
+  addNewBoard, // ✅ aquí debe estar
+} = userSlice.actions;
+
+export default userSlice.reducer;
+
