@@ -24,51 +24,69 @@ const Login = () => {
   const history = useHistory();
   const dispatch = useDispatch();
   const { pending } = useSelector((state) => state.user);
-
   const [userInformations, setUserInformations] = useState({ email: "", password: "" });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
     if (!userInformations.email || !userInformations.password) {
       dispatch(openAlert({ message: "Por favor completa todos los campos", severity: "warning" }));
       return;
     }
-
+    
     try {
       const normalizedData = {
         email: userInformations.email.trim().toLowerCase(),
         password: userInformations.password,
       };
-
-      // 🔑 Login en backend
-      const res = await login(normalizedData, dispatch);
-
-      if (!res?.user?.token) throw new Error("No se pudo iniciar sesión correctamente");
-
-      // 🔑 Guardar token y configurar Axios
-      localStorage.setItem("token", res.user.token);
-      setBearer(res.user.token);
-
+      
+      console.log("🔑 Iniciando proceso de login...");
+      
+      // 🔑 Login (ahora retorna la respuesta)
+      const loginResponse = await login(normalizedData, dispatch);
+      
+      console.log("✅ Login exitoso, respuesta:", loginResponse);
+      
       // 🔑 Cargar usuario logueado en Redux
-      await loadUser(dispatch);
-
-      // ✅ Mostrar alerta y redirigir
-      dispatch(openAlert({ message: "Inicio de sesión exitoso", severity: "success" }));
-      history.push("/boards");
+      console.log("📥 Cargando información del usuario...");
+      const userLoaded = await loadUser(dispatch);
+      
+      if (!userLoaded) {
+        throw new Error("No se pudo cargar la información del usuario");
+      }
+      
+      console.log("✅ Usuario cargado correctamente:", userLoaded);
+      
+      // ✅ Mostrar mensaje de éxito y redirigir
+      dispatch(openAlert({ 
+        message: "¡Bienvenido! Redirigiendo a tableros...", 
+        severity: "success",
+        duration: 1500
+      }));
+      
+      // Pequeño delay para que el usuario vea el mensaje
+      setTimeout(() => {
+        console.log("🚀 Redirigiendo a /boards");
+        history.push("/boards");
+      }, 500);
+      
     } catch (err) {
-      dispatch(
-        openAlert({
-          message: err?.response?.data?.errMessage || err.message || "Error al iniciar sesión",
-          severity: "error",
-        })
-      );
+      console.error("❌ Error en proceso de login:", err);
+      
+      // Limpiar datos en caso de error
+      localStorage.removeItem("token");
+      setBearer(null);
+      
+      // El error ya se maneja en userService con dispatch(openAlert)
+      // Solo necesitamos hacer cleanup aquí
     }
   };
 
   return (
     <>
-      <BgContainer><Background /></BgContainer>
+      <BgContainer>
+        <Background />
+      </BgContainer>
       <Container>
         <TrelloIconContainer onClick={() => history.push("/")}>
           <Icon src="https://i.postimg.cc/6Qj1y8hB/logok.png" />
@@ -91,7 +109,9 @@ const Login = () => {
                 value={userInformations.password}
                 onChange={(e) => setUserInformations({ ...userInformations, password: e.target.value })}
               />
-              <Button type="submit" disabled={pending}>Ingresar</Button>
+              <Button type="submit" disabled={pending}>
+                {pending ? "Ingresando..." : "Ingresar"}
+              </Button>
               <Hr />
               <Link fontSize="0.85rem" onClick={() => history.push("/register")}>
                 ¿No tienes una cuenta? Registrarse
