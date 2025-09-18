@@ -1,71 +1,57 @@
-const jwt = require("jsonwebtoken");
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const path = require("path");
+require("dotenv").config();
 
-// Rutas que NO requieren token
-const pathsToExclude = [
-  { url: "/", methods: ["GET"] },
-  { url: /^\/static\/.*/, methods: ["GET"] },
-  { url: "/favicon.ico", methods: ["GET"] },
-  { url: "/manifest.json", methods: ["GET"] },
-  // ✅ RUTAS DE AUTENTICACIÓN QUE NO REQUIEREN TOKEN
-  { url: "/api/users/register", methods: ["POST"] },
-  { url: "/api/users/login", methods: ["POST"] },
-  { url: "/api/users/getUserWithMail", methods: ["POST"] }, // Si no requiere token
-];
+const userRoute = require("./routes/userRoute");
+const boardRoute = require("./routes/boardRoute");
+const listRoute = require("./routes/listRoute");
+const cardRoute = require("./routes/cardRoute");
+const tokenMiddleware = require("./middlewares/verifyTokenWrapper");
 
-const tokenMiddleware = (req, res, next) => {
-  const reqPath = req.path.replace(/\/$/, "") || "/";
-  
-  console.log(`[TokenMiddleware] 🔍 Procesando: ${req.method} ${reqPath}`);
-  
-  // Comprobar si la ruta está excluida
-  const isExcluded = pathsToExclude.some((p) => {
-    const urlMatches = p.url instanceof RegExp ? p.url.test(reqPath) : p.url === reqPath;
-    const methodMatches = p.methods.includes(req.method);
-    return urlMatches && methodMatches;
-  });
-  
-  if (isExcluded) {
-    console.log(`[TokenMiddleware] ✅ Ruta excluida: ${req.method} ${reqPath}`);
-    return next();
-  }
+const app = express();
 
-  console.log(`[TokenMiddleware] 🔒 Ruta protegida: ${req.method} ${reqPath} - Verificando token...`);
-  
-  const authHeader = req.headers["authorization"];
-  
-  if (!authHeader) {
-    console.log(`[TokenMiddleware] ❌ No Authorization header en ${req.method} ${reqPath}`);
-    return res.status(401).json({ message: "No token proporcionado" });
-  }
-  
-  const parts = authHeader.split(" ");
-  if (parts.length !== 2 || parts[0] !== "Bearer") {
-    console.log(`[TokenMiddleware] ❌ Token malformado: ${authHeader}`);
-    return res.status(401).json({ message: "Token malformado" });
-  }
-  
-  const token = parts[1];
-  console.log(`[TokenMiddleware] 🔑 Token encontrado, verificando...`);
-  
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    if (!decoded || !decoded.id) {
-      console.log(`[TokenMiddleware] ❌ Token sin ID:`, decoded);
-      return res.status(401).json({ message: "Token inválido" });
-    }
-    
-    req.user = { id: decoded.id };
-    console.log(`[TokenMiddleware] ✅ Usuario autenticado: ${req.user.id}`);
-    next();
-    
-  } catch (err) {
-    console.log(`[TokenMiddleware] ❌ Error verificando token:`, err.message);
-    return res.status(401).json({ message: "Token inválido o expirado" });
-  }
-};
+// Middlewares básicos
+app.use(express.json());
 
-module.exports = tokenMiddleware;
+// Logger para ver todas las peticiones que llegan al backend
+app.use((req, res, next) => {
+  console.log("➡️ Petición entrante:", req.method, req.url);
+  next();
+});
+
+// CORS
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "https://tableros-53ww.onrender.com",
+  credentials: true,
+}));
+
+// ✅ APLICAR EL MIDDLEWARE DE TOKEN GLOBALMENTE ANTES DE LAS RUTAS
+app.use(tokenMiddleware);
+
+// ✅ RUTAS API (ahora TODAS pasan por el middleware de token)
+app.use("/api/users", userRoute);
+app.use("/api/boards", boardRoute);
+app.use("/api/lists", listRoute);
+app.use("/api/cards", cardRoute);
+
+// Servir React build
+app.use(express.static(path.join(__dirname, "../client/build")));
+
+// Catch-all handler: envía de vuelta React's index.html file
+app.get("*", (req, res) => {
+  res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
+});
+
+// Conexión MongoDB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ Conectado a MongoDB"))
+  .catch(err => console.log("❌ MongoDB error:", err));
+
+// Puerto
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 
 
 
