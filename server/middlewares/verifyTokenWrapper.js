@@ -1,57 +1,63 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const path = require("path");
-require("dotenv").config();
+// server/middlewares/verifyTokenWrapper.js
+const jwt = require("jsonwebtoken");
+const User = require("../models/userModel");
 
-const userRoute = require("../routes/userRoute");
-const boardRoute = require("./routes/boardRoute");
-const listRoute = require("./routes/listRoute");
-const cardRoute = require("./routes/cardRoute");
-const tokenMiddleware = require("./middlewares/verifyTokenWrapper");
+// Rutas que NO requieren token
+const pathsToExclude = [
+  { url: "/", methods: ["GET"] },
+  { url: /^\/static\/.*/, methods: ["GET"] },
+  { url: "/favicon.ico", methods: ["GET"] },
+  { url: "/manifest.json", methods: ["GET"] },
+  { url: "/api/users/login", methods: ["POST"] },
+  { url: "/api/users/register", methods: ["POST"] },
+];
 
-const app = express();
+// Middleware global de verificación de token
+const verifyTokenWrapper = async (req, res, next) => {
+  try {
+    const pathExcluded = pathsToExclude.some(
+      (p) =>
+        (typeof p.url === "string" ? p.url === req.path : p.url.test(req.path)) &&
+        p.methods.includes(req.method)
+    );
 
-// Middlewares básicos
-app.use(express.json());
+    if (pathExcluded) {
+      console.log(`[TokenMiddleware] ✅ Ruta excluida (pública): ${req.method} ${req.path}`);
+      return next();
+    }
 
-// Logger para ver todas las peticiones que llegan al backend
-app.use((req, res, next) => {
-  console.log("➡️ Petición entrante:", req.method, req.url);
-  next();
-});
+    console.log(`[TokenMiddleware] 🔒 Ruta protegida: ${req.method} ${req.path} - Verificando token...`);
 
-// CORS
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "https://tableros-53ww.onrender.com",
-  credentials: true,
-}));
+    const token = req.headers["authorization"]?.split(" ")[1];
+    if (!token) {
+      console.log("[TokenMiddleware] ❌ Token no encontrado");
+      return res.status(401).json({ errMessage: "Token no proporcionado" });
+    }
 
-// ✅ APLICAR EL MIDDLEWARE DE TOKEN GLOBALMENTE ANTES DE LAS RUTAS
-app.use(tokenMiddleware);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded?.id) {
+      console.log("[TokenMiddleware] ❌ Token inválido");
+      return res.status(401).json({ errMessage: "Token inválido" });
+    }
 
-// ✅ RUTAS API (ahora TODAS pasan por el middleware de token)
-app.use("/api/users", userRoute);
-app.use("/api/boards", boardRoute);
-app.use("/api/lists", listRoute);
-app.use("/api/cards", cardRoute);
+    // Guardar info del usuario en req
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) {
+      console.log("[TokenMiddleware] ❌ Usuario no encontrado con ID del token");
+      return res.status(401).json({ errMessage: "Usuario no encontrado" });
+    }
 
-// Servir React build
-app.use(express.static(path.join(__dirname, "../client/build")));
+    req.user = { id: user._id, email: user.email, name: user.name };
+    console.log(`[TokenMiddleware] ✅ Usuario autenticado correctamente: ${user.email}`);
 
-// Catch-all handler: envía de vuelta React's index.html file
-app.get("*", (req, res) => {
-  res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
-});
+    next();
+  } catch (error) {
+    console.error("[TokenMiddleware] ❌ Error verificando token:", error.message);
+    return res.status(401).json({ errMessage: "Token inválido o expirado" });
+  }
+};
 
-// Conexión MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Conectado a MongoDB"))
-  .catch(err => console.log("❌ MongoDB error:", err));
-
-// Puerto
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+module.exports = verifyTokenWrapper;
 
 
 
