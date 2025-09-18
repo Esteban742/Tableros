@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
 import axios from "axios";
 import setBearer from "../../../Utils/setBearer";
-import Navbar from "../../Navbar";
+import Navbar from "../Navbar";
 import { Container, Title, Wrapper, Board, AddBoard } from "./Styled";
 
 const Boards = () => {
