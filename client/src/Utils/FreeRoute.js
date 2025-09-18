@@ -7,7 +7,7 @@ import setBearer from "./setBearer";
 
 const FreeRoute = ({ component: Component, ...rest }) => {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.user);
+  const { userInfo, isAuthenticated } = useSelector((state) => state.user);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,23 +20,28 @@ const FreeRoute = ({ component: Component, ...rest }) => {
     setBearer(token);
 
     (async () => {
-      await loadUser(dispatch);
+      if (!isAuthenticated || !userInfo) {
+        await loadUser(dispatch);
+      }
       setLoading(false);
     })();
-  }, [dispatch]);
+  }, [dispatch, isAuthenticated, userInfo]);
 
   if (loading) return <div>Cargando...</div>; // opcional: spinner
+
+  const isUserLoggedIn = isAuthenticated && userInfo && (userInfo._id || userInfo.id);
 
   return (
     <Route
       {...rest}
       render={(props) =>
-        !user || !user.id ? <Component {...props} /> : <Redirect to="/boards" />
+        !isUserLoggedIn ? <Component {...props} /> : <Redirect to="/boards" />
       }
     />
   );
 };
 
 export default FreeRoute;
+
 
 
