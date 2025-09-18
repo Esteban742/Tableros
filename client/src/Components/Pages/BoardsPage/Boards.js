@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
 import axios from "axios";
 import setBearer from "../../../Utils/setBearer";
+import Navbar from "../../Navbar";
 import { Container, Title, Wrapper, Board, AddBoard } from "./Styled";
 
 const Boards = () => {
@@ -10,6 +11,10 @@ const Boards = () => {
   const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Estados para props del Navbar
+  const [searchString, setSearchString] = useState("");
+  const [memberFilter, setMemberFilter] = useState([]);
   
   // Corregido: usar userInfo en lugar de currentUser
   const { userInfo, token } = useSelector((state) => state.user);
@@ -61,41 +66,64 @@ const Boards = () => {
 
   if (loading) {
     return (
-      <Container>
-        <Title>Cargando tableros...</Title>
-      </Container>
+      <>
+        <Navbar 
+          searchString={searchString}
+          setSearchString={setSearchString}
+          memberFilter={memberFilter}
+          setMemberFilter={setMemberFilter}
+        />
+        <Container>
+          <Title>Cargando tableros...</Title>
+        </Container>
+      </>
     );
   }
 
   if (error) {
     return (
-      <Container>
-        <Title>Error al cargar tableros</Title>
-        <Wrapper>
-          <div style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
-            <p>{error}</p>
-            <button 
-              onClick={() => window.location.reload()}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                marginTop: '10px'
-              }}
-            >
-              Reintentar
-            </button>
-          </div>
-        </Wrapper>
-      </Container>
+      <>
+        <Navbar 
+          searchString={searchString}
+          setSearchString={setSearchString}
+          memberFilter={memberFilter}
+          setMemberFilter={setMemberFilter}
+        />
+        <Container>
+          <Title>Error al cargar tableros</Title>
+          <Wrapper>
+            <div style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
+              <p>{error}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  marginTop: '10px'
+                }}
+              >
+                Reintentar
+              </button>
+            </div>
+          </Wrapper>
+        </Container>
+      </>
     );
   }
 
   return (
-    <Container>
+    <>
+      <Navbar 
+        searchString={searchString}
+        setSearchString={setSearchString}
+        memberFilter={memberFilter}
+        setMemberFilter={setMemberFilter}
+      />
+      <Container>
       <Title>Tus Tableros</Title>
       <Wrapper>
         {/* Tableros existentes */}
