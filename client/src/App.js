@@ -17,15 +17,12 @@ import setBearer from "./Utils/setBearer";
 
 const App = () => {
   useEffect(() => {
-    
     const token = localStorage.getItem("token");
-    
     console.log("Token antes de loadUser:", token);
-    
-    if (!token) return;
-    // No hay token, no hacer nada
 
-    setBearer(token); // primero setear el header
+    if (!token) return; // No hay token, no hacer nada
+
+    setBearer(token); // Primero setear el header
 
     console.log("Axios headers:", axios.defaults.headers.common);
 
@@ -40,11 +37,25 @@ const App = () => {
     <BrowserRouter>
       <Alert />
       <Switch>
-        <Route exact path="/" render={() => <Redirect to="/boards" />} />
+        {/* Ruta raíz: redirigir según autenticación */}
+        <Route
+          exact
+          path="/"
+          render={() => {
+            const token = localStorage.getItem("token");
+            return token ? <Redirect to="/boards" /> : <Redirect to="/login" />;
+          }}
+        />
+
+        {/* Rutas protegidas */}
         <ProtectedRoute exact path="/boards" component={Boards} />
         <ProtectedRoute exact path="/board/:id" component={Board} />
+
+        {/* Rutas libres */}
         <FreeRoute exact path="/login" component={Login} />
         <FreeRoute exact path="/register" component={Register} />
+
+        {/* Ruta catch-all */}
         <Route path="*" render={() => <Redirect to="/" />} />
       </Switch>
     </BrowserRouter>
