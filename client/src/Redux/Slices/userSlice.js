@@ -42,7 +42,7 @@ export const userSlice = createSlice({
     
     loadSuccess: (state, action) => {
       state.isAuthenticated = true;
-      state.userInfo = action.payload.user.user;
+      state.userInfo = action.payload.user;
       state.token = localStorage.getItem("token");
       state.pending = false;
     },
