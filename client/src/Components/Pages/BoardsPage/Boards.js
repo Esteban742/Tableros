@@ -1,10 +1,11 @@
+import LoadingScreen from "../../LoadingScreen";
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { useHistory } from "react-router-dom";
-import axios from "axios";
-import setBearer from "../../../Utils/setBearer";
-import Navbar from "../Navbar";
-import { Container, Title, Wrapper, Board, AddBoard } from "./Styled";
+import { useDispatch, useSelector } from "react-redux";
+import { getBoards } from "../../../Services/boardsService";
+import Navbar from "../../Navbar";
+import { Container, Wrapper, Title, Board, AddBoard } from "./Styled";
+import CreateBoard from "../../Modals/CreateBoardModal/CreateBoard";
+import { useHistory } from "react-router";
 
 const Boards = () => {
   const history = useHistory();
