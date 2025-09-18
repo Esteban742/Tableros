@@ -4,7 +4,7 @@ const cors = require("cors");
 const path = require("path");
 require("dotenv").config();
 
-const userRoute = require("./routes/userRoute");
+const userRoute = require("../routes/userRoute");
 const boardRoute = require("./routes/boardRoute");
 const listRoute = require("./routes/listRoute");
 const cardRoute = require("./routes/cardRoute");
