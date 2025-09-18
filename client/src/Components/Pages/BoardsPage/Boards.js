@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { useHistory } from "react-router-dom";
 import axios from "axios";
 import setBearer from "../../../Utils/setBearer";
+import { Container, Title, Wrapper, Board, AddBoard } from "./Styled";
 
 const Boards = () => {
+  const history = useHistory();
   const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,182 +48,117 @@ const Boards = () => {
     fetchBoards();
   }, [userInfo, token]);
 
+  const handleBoardClick = (boardId) => {
+    console.log("Navegando al tablero:", boardId);
+    history.push(`/board/${boardId}`);
+  };
+
+  const handleCreateBoard = () => {
+    console.log("Crear nuevo tablero - funcionalidad por implementar");
+    // Aquí implementarías la lógica para crear un nuevo tablero
+    // Por ejemplo, abrir un modal o navegar a una página de creación
+  };
+
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '50vh',
-        fontSize: '18px',
-        color: '#666'
-      }}>
-        Cargando tableros...
-      </div>
+      <Container>
+        <Title>Cargando tableros...</Title>
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <h1>Error</h1>
-        <p style={{ color: 'red' }}>{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer'
-          }}
-        >
-          Reintentar
-        </button>
-      </div>
+      <Container>
+        <Title>Error al cargar tableros</Title>
+        <Wrapper>
+          <div style={{ color: 'white', textAlign: 'center', padding: '20px' }}>
+            <p>{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                marginTop: '10px'
+              }}
+            >
+              Reintentar
+            </button>
+          </div>
+        </Wrapper>
+      </Container>
     );
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ marginBottom: '30px' }}>
-        <h1 style={{ color: '#333', marginBottom: '10px' }}>Mis Tableros</h1>
-        {userInfo && (
-          <p style={{ color: '#666', fontSize: '16px' }}>
-            Bienvenido, {userInfo.name}! ({userInfo.email})
-          </p>
+    <Container>
+      <Title>Tus Tableros</Title>
+      <Wrapper>
+        {/* Tableros existentes */}
+        {boards.map((board) => (
+          <Board
+            key={board._id}
+            onClick={() => handleBoardClick(board._id)}
+            isImage={board.backgroundImage ? true : false}
+            link={board.backgroundImage || board.backgroundColor || "#0079bf"}
+          >
+            <div style={{ 
+              fontWeight: 'bold', 
+              fontSize: '1rem',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.7)'
+            }}>
+              {board.title || 'Sin título'}
+            </div>
+          </Board>
+        ))}
+
+        {/* Botón para crear nuevo tablero */}
+        <AddBoard onClick={handleCreateBoard}>
+          Crear nuevo tablero
+        </AddBoard>
+
+        {/* Si no hay tableros, mostrar un tablero principal como ejemplo */}
+        {boards.length === 0 && (
+          <Board
+            onClick={() => console.log("Tablero principal clickeado")}
+            isImage={true}
+            link="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+          >
+            <div style={{ 
+              fontWeight: 'bold', 
+              fontSize: '1rem',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.7)'
+            }}>
+              PRINCIPAL
+            </div>
+          </Board>
         )}
-      </header>
-      
-      {boards.length > 0 ? (
-        <div>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-            gap: '20px',
-            marginBottom: '30px'
-          }}>
-            {boards.map((board) => (
-              <div 
-                key={board._id} 
-                style={{ 
-                  padding: '20px', 
-                  border: '1px solid #ddd', 
-                  borderRadius: '8px',
-                  backgroundColor: '#f9f9f9',
-                  cursor: 'pointer',
-                  transition: 'box-shadow 0.2s ease',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                }}
-              >
-                <h3 style={{ margin: '0 0 10px 0', color: '#333' }}>
-                  {board.title || 'Tablero sin título'}
-                </h3>
-                {board.description && (
-                  <p style={{ color: '#666', fontSize: '14px', margin: '0' }}>
-                    {board.description}
-                  </p>
-                )}
-                <div style={{ 
-                  marginTop: '15px', 
-                  fontSize: '12px', 
-                  color: '#999' 
-                }}>
-                  Creado: {new Date(board.createdAt).toLocaleDateString()}
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          <button
-            style={{
-              padding: '15px 30px',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#218838';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#28a745';
-            }}
-            onClick={() => {
-              console.log("Crear nuevo tablero - funcionalidad por implementar");
-              // Aquí irá la lógica para crear un nuevo tablero
-            }}
-          >
-            + Crear Nuevo Tablero
-          </button>
-        </div>
-      ) : (
+      </Wrapper>
+
+      {/* Debug info - remover en producción */}
+      {process.env.NODE_ENV === 'development' && (
         <div style={{ 
-          textAlign: 'center', 
-          padding: '60px 20px',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '12px',
-          border: '2px dashed #dee2e6'
+          position: 'fixed',
+          bottom: '10px',
+          left: '10px',
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          color: 'white',
+          padding: '10px',
+          borderRadius: '5px',
+          fontSize: '12px',
+          zIndex: 1000
         }}>
-          <h2 style={{ color: '#6c757d', marginBottom: '20px' }}>
-            No tienes tableros aún
-          </h2>
-          <p style={{ color: '#6c757d', marginBottom: '30px', fontSize: '16px' }}>
-            Crea tu primer tablero para empezar a organizar tus tareas
-          </p>
-          <button
-            style={{
-              padding: '15px 30px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '18px',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#0056b3';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#007bff';
-            }}
-            onClick={() => {
-              console.log("Crear primer tablero - funcionalidad por implementar");
-              // Aquí irá la lógica para crear el primer tablero
-            }}
-          >
-            Crear Mi Primer Tablero
-          </button>
+          <strong>Debug:</strong><br/>
+          Usuario: {userInfo?.name || 'No cargado'}<br/>
+          Token: {token ? 'Presente' : 'Ausente'}<br/>
+          Tableros: {boards.length}
         </div>
       )}
-      
-      {/* Debug info - remover en producción */}
-      <div style={{ 
-        marginTop: '40px', 
-        padding: '15px', 
-        backgroundColor: '#f8f9fa', 
-        borderRadius: '5px',
-        fontSize: '12px',
-        color: '#666'
-      }}>
-        <strong>Debug Info:</strong><br/>
-        Usuario: {userInfo?.name || 'No cargado'}<br/>
-        Token: {token ? 'Presente' : 'Ausente'}<br/>
-        Tableros encontrados: {boards.length}<br/>
-        Estado: {loading ? 'Cargando' : 'Cargado'}
-      </div>
-    </div>
+    </Container>
   );
 };
 
