@@ -1,3 +1,4 @@
+// client/src/Components/Pages/LoginPage/Login.js
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
@@ -28,57 +29,60 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!userInformations.email || !userInformations.password) {
       dispatch(openAlert({ message: "Por favor completa todos los campos", severity: "warning" }));
       return;
     }
-    
+
     try {
       const normalizedData = {
         email: userInformations.email.trim().toLowerCase(),
         password: userInformations.password,
       };
-      
+
       console.log("🔑 Iniciando proceso de login...");
-      
-      // 🔑 Login (ahora retorna la respuesta)
+
+      // 🔑 Login (ahora retorna token y user info)
       const loginResponse = await login(normalizedData, dispatch);
-      
-      console.log("✅ Login exitoso, respuesta:", loginResponse);
-      
-      // 🔑 Cargar usuario logueado en Redux
-      console.log("📥 Cargando información del usuario...");
-      const userLoaded = await loadUser(dispatch);
-      
-      if (!userLoaded) {
-        throw new Error("No se pudo cargar la información del usuario");
+
+      if (!loginResponse || !loginResponse.token) {
+        throw new Error("No se recibió token en la respuesta");
       }
-      
+
+      // 🔑 Guardar token en localStorage y en axios
+      localStorage.setItem("token", loginResponse.token);
+      setBearer(loginResponse.token);
+
+      console.log("✅ Token guardado, cargando usuario...");
+
+      // 🔑 Cargar info del usuario en Redux
+      const userLoaded = await loadUser(dispatch);
+      if (!userLoaded) throw new Error("No se pudo cargar la información del usuario");
+
       console.log("✅ Usuario cargado correctamente:", userLoaded);
-      
-      // ✅ Mostrar mensaje de éxito y redirigir
-      dispatch(openAlert({ 
-        message: "¡Bienvenido! Redirigiendo a tableros...", 
+
+      // ✅ Mensaje de éxito
+      dispatch(openAlert({
+        message: `¡Bienvenido ${userLoaded.name}! Redirigiendo a tableros...`,
         severity: "success",
-        duration: 1500
+        duration: 1500,
       }));
-      
-      // Pequeño delay para que el usuario vea el mensaje
-      setTimeout(() => {
-        console.log("🚀 Redirigiendo a /boards");
-        history.push("/boards");
-      }, 500);
-      
+
+      // Redirigir a /boards
+      history.push("/boards");
+
     } catch (err) {
-      console.error("❌ Error en proceso de login:", err);
-      
-      // Limpiar datos en caso de error
+      console.error("❌ Error en login:", err);
+
+      // Cleanup
       localStorage.removeItem("token");
       setBearer(null);
-      
-      // El error ya se maneja en userService con dispatch(openAlert)
-      // Solo necesitamos hacer cleanup aquí
+
+      dispatch(openAlert({ 
+        message: err.message || "Error al iniciar sesión",
+        severity: "error",
+      }));
     }
   };
 
