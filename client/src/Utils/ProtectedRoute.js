@@ -4,111 +4,85 @@ import { Route, Redirect } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { loadUser } from "../Services/userService";
 import setBearer from "./setBearer";
+
 const ProtectedRoute = ({ component: Component, ...rest }) => {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.user);
+  
+  // ✅ CORREGIDO: usar userInfo e isAuthenticated del state
+  const { userInfo, isAuthenticated, pending } = useSelector((state) => state.user);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
+    
+    console.log("🔒 ProtectedRoute - Token:", token ? "Presente" : "Ausente");
+    console.log("🔒 ProtectedRoute - userInfo:", userInfo);
+    console.log("🔒 ProtectedRoute - isAuthenticated:", isAuthenticated);
+    
     if (!token) {
-      setLoading(false); // no hay token, no cargamos usuario
+      console.log("❌ No hay token, redirigiendo al login");
+      setLoading(false);
       return;
     }
+
+    // Si ya tenemos usuario autenticado, no volver a cargar
+    if (isAuthenticated && userInfo) {
+      console.log("✅ Usuario ya autenticado:", userInfo.name);
+      setLoading(false);
+      return;
+    }
+
     setBearer(token);
+    
     // Cargar usuario y esperar a que termine
     (async () => {
-      await loadUser(dispatch);
+      console.log("📥 Cargando usuario en ProtectedRoute...");
+      const user = await loadUser(dispatch);
+      console.log("✅ Usuario cargado en ProtectedRoute:", user ? "Éxito" : "Falló");
       setLoading(false);
     })();
-  }, [dispatch]);
-  if (loading) return <div>Cargando...</div>; // opcional: spinner
+  }, [dispatch, userInfo, isAuthenticated]);
+
+  // Mostrar loading mientras se verifica autenticación
+  if (loading || pending) {
+    console.log("⏳ ProtectedRoute - Mostrando loading...");
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px',
+        color: '#666'
+      }}>
+        Cargando...
+      </div>
+    );
+  }
+
+  // ✅ CORREGIDO: verificar isAuthenticated Y userInfo
+  const isUserAuthenticated = isAuthenticated && userInfo && (userInfo._id || userInfo.id);
+  
+  console.log("🔒 ProtectedRoute - ¿Usuario autenticado?", isUserAuthenticated);
+  
   return (
     <Route
       {...rest}
       render={(props) =>
-        user && user.id ? <Component {...props} /> : <Redirect to="/login" />
+        isUserAuthenticated ? (
+          <>
+            {console.log("✅ Renderizando componente protegido para:", userInfo.name)}
+            <Component {...props} />
+          </>
+        ) : (
+          <>
+            {console.log("❌ Redirigiendo al login - Usuario no autenticado")}
+            <Redirect to="/login" />
+          </>
+        )
       }
     />
   );
 };
-export default ProtectedRoute;  
 
-client/src/Redux/Slices/userSlice.js
-
-import { createSlice } from "@reduxjs/toolkit";
-const initialState = {
-  userInfo: null,
-  isAuthenticated: null,
-  pending: true,
-  loading: false,
-  token: localStorage.getItem("token"),
-};
-export const userSlice = createSlice({
-  name: "user",
-  initialState,
-  reducers: {
-    registrationStart: (state) => {
-      state.pending = true;
-    },
-    registrationEnd: (state) => {
-      state.pending = false;
-    },
-    loginStart: (state) => {
-      state.pending = true;
-    },
-    loginSuccess: (state, action) => {
-      state.pending = false;
-      state.isAuthenticated = true;
-      state.userInfo = action.payload.user;
-      state.token = action.payload.user.token;
-      localStorage.setItem("token", action.payload.user.token);
-    },
-    loginFailure: (state) => {
-      state.pending = false;
-      state.isAuthenticated = false;
-      localStorage.removeItem("token");
-    },
-    loadStart: (state) => {
-      state.pending = true;
-    },
-    loadSuccess: (state, action) => {
-      state.isAuthenticated = true;
-      state.userInfo = action.payload.user;
-      state.token = localStorage.getItem("token");
-      state.pending = false;
-    },
-    loadFailure: (state) => {
-      state.pending = false;
-    },
-    logout: (state) => {
-      state.isAuthenticated = false;
-      state.userInfo = null;
-      state.token = null;
-      localStorage.removeItem("token");
-    },
-    fetchingStart: (state)=>{
-      state.loading = true;
-    },
-    fetchingFinish: (state) => {
-      state.loading = false;
-    },
-    addNewBoard: (state,action) => {
-      state.userInfo.boards.unshift(action.payload);
-    }
-  },
-});
-export const {
-  registrationStart,
-  registrationEnd,
-  loginStart,
-  loginFailure,
-  loginSuccess,
-  loadStart,
-  loadSuccess,
-  loadFailure,
-  logout,
-  fetchingStart,
-  fetchingFinish,
-  addNewBoard
-} = userSlice.actions;
-export default userSlice.reducer;
+export default ProtectedRoute;
