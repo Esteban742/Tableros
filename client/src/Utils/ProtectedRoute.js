@@ -1,88 +1,43 @@
-// client/src/Utils/ProtectedRoute.js
+// ProtectedRoute.js
 import React, { useEffect, useState } from "react";
-import { Route, Redirect } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { loadUser } from "../Services/userService";
-import setBearer from "./setBearer";
+import { useSelector, useDispatch } from "react-redux";
+import { Navigate, Outlet } from "react-router-dom";
+import { loadUser } from "../Services/userService"; // Ajusta según tu estructura
 
-const ProtectedRoute = ({ component: Component, ...rest }) => {
+const ProtectedRoute = () => {
   const dispatch = useDispatch();
-  
-  // ✅ CORREGIDO: usar userInfo e isAuthenticated del state
-  const { userInfo, isAuthenticated, pending } = useSelector((state) => state.user);
-  const [loading, setLoading] = useState(true);
+
+  // Estado del usuario desde Redux
+  const { user, loading } = useSelector((state) => state.user);
+
+  // Estado local para manejar la carga inicial
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    
-    console.log("🔒 ProtectedRoute - Token:", token ? "Presente" : "Ausente");
-    console.log("🔒 ProtectedRoute - userInfo:", userInfo);
-    console.log("🔒 ProtectedRoute - isAuthenticated:", isAuthenticated);
-    
-    if (!token) {
-      console.log("❌ No hay token, redirigiendo al login");
-      setLoading(false);
-      return;
-    }
+    const fetchUser = async () => {
+      await dispatch(loadUser()); // Carga el usuario desde backend
+      setCheckingAuth(false);     // Termina de chequear autenticación
+    };
 
-    // Si ya tenemos usuario autenticado, no volver a cargar
-    if (isAuthenticated && userInfo) {
-      console.log("✅ Usuario ya autenticado:", userInfo.name);
-      setLoading(false);
-      return;
-    }
+    fetchUser();
+  }, [dispatch]);
 
-    setBearer(token);
-    
-    // Cargar usuario y esperar a que termine
-    (async () => {
-      console.log("📥 Cargando usuario en ProtectedRoute...");
-      const user = await loadUser(dispatch);
-      console.log("✅ Usuario cargado en ProtectedRoute:", user ? "Éxito" : "Falló");
-      setLoading(false);
-    })();
-  }, [dispatch, userInfo, isAuthenticated]);
-
-  // Mostrar loading mientras se verifica autenticación
-  if (loading || pending) {
-    console.log("⏳ ProtectedRoute - Mostrando loading...");
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        fontSize: '18px',
-        color: '#666'
-      }}>
-        Cargando...
-      </div>
-    );
+  if (checkingAuth || loading) {
+    // Mostramos un loading mientras se carga el usuario
+    return <div>⏳ Cargando usuario...</div>;
   }
 
-  // ✅ CORREGIDO: verificar isAuthenticated Y userInfo
-  const isUserAuthenticated = isAuthenticated && userInfo && (userInfo._id || userInfo.id);
-  
-  console.log("🔒 ProtectedRoute - ¿Usuario autenticado?", isUserAuthenticated);
-  
-  return (
-    <Route
-      {...rest}
-      render={(props) =>
-        isUserAuthenticated ? (
-          <>
-            {console.log("✅ Renderizando componente protegido para:", userInfo.name)}
-            <Component {...props} />
-          </>
-        ) : (
-          <>
-            {console.log("❌ Redirigiendo al login - Usuario no autenticado")}
-            <Redirect to="/login" />
-          </>
-        )
-      }
-    />
-  );
+  // Verificamos si hay un usuario válido
+  const isAuthenticated = !!user?.email;
+
+  if (!isAuthenticated) {
+    // Redirigimos al login si no hay usuario
+    return <Navigate to="/login" replace />;
+  }
+
+  // Usuario autenticado, mostramos las rutas hijas
+  return <Outlet />;
 };
 
 export default ProtectedRoute;
+
