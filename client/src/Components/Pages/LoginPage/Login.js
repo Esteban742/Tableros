@@ -28,65 +28,60 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!userInformations.email || !userInformations.password) {
       dispatch(openAlert({ message: "Por favor completa todos los campos", severity: "warning" }));
       return;
     }
-    
+
     try {
       const normalizedData = {
         email: userInformations.email.trim().toLowerCase(),
         password: userInformations.password,
       };
-      
-      console.log("🔑 Iniciando proceso de login...");
-      
-      // 🔑 Login (ahora retorna la respuesta)
+
+      console.log("🔑 Iniciando login...");
+
       const loginResponse = await login(normalizedData, dispatch);
-      
-      console.log("✅ Login exitoso, respuesta:", loginResponse);
-      
-      // 🔑 Cargar usuario logueado en Redux
-      console.log("📥 Cargando información del usuario...");
-      const userLoaded = await loadUser(dispatch);
-      
-      if (!userLoaded) {
-        throw new Error("No se pudo cargar la información del usuario");
+
+      // ⚠️ Importante: usar loginResponse.user.token según tu backend
+      if (!loginResponse?.user?.token) {
+        throw new Error("No se recibió token en la respuesta");
       }
-      
-      console.log("✅ Usuario cargado correctamente:", userLoaded);
-      
-      // ✅ Mostrar mensaje de éxito y redirigir
-      dispatch(openAlert({ 
-        message: "¡Bienvenido! Redirigiendo a tableros...", 
+
+      // Guardar token
+      const token = loginResponse.user.token;
+      localStorage.setItem("token", token);
+      setBearer(token);
+
+      // Cargar info de usuario en Redux
+      const userLoaded = await loadUser(dispatch);
+      if (!userLoaded) throw new Error("No se pudo cargar la información del usuario");
+
+      dispatch(openAlert({
+        message: `¡Bienvenido ${userLoaded.name}! Redirigiendo a tableros...`,
         severity: "success",
-        duration: 1500
+        duration: 1500,
       }));
-      
-      // Pequeño delay para que el usuario vea el mensaje
-      setTimeout(() => {
-        console.log("🚀 Redirigiendo a /boards");
-        history.push("/boards");
-      }, 500);
-      
+
+      history.push("/boards");
+
     } catch (err) {
-      console.error("❌ Error en proceso de login:", err);
-      
-      // Limpiar datos en caso de error
+      console.error("❌ Error en login:", err);
+
       localStorage.removeItem("token");
       setBearer(null);
-      
-      // El error ya se maneja en userService con dispatch(openAlert)
-      // Solo necesitamos hacer cleanup aquí
+
+      dispatch(openAlert({
+        message: err.message || "Error al iniciar sesión",
+        severity: "error",
+      }));
     }
   };
 
   return (
     <>
-      <BgContainer>
-        <Background />
-      </BgContainer>
+      <BgContainer><Background /></BgContainer>
       <Container>
         <TrelloIconContainer onClick={() => history.push("/")}>
           <Icon src="https://i.postimg.cc/6Qj1y8hB/logok.png" />
@@ -125,4 +120,5 @@ const Login = () => {
 };
 
 export default Login;
+
 
