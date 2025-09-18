@@ -11,7 +11,7 @@ const Boards = () => {
   const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  
   // Estados para props del Navbar
   const [searchString, setSearchString] = useState("");
   const [memberFilter, setMemberFilter] = useState([]);
@@ -124,69 +124,50 @@ const Boards = () => {
         setMemberFilter={setMemberFilter}
       />
       <Container>
-      <Title>Tus Tableros</Title>
-      <Wrapper>
-        {/* Tableros existentes */}
-        {boards.map((board) => (
-          <Board
-            key={board._id}
-            onClick={() => handleBoardClick(board._id)}
-            isImage={board.backgroundImage ? true : false}
-            link={board.backgroundImage || board.backgroundColor || "#0079bf"}
-          >
-            <div style={{ 
-              fontWeight: 'bold', 
-              fontSize: '1rem',
-              textShadow: '1px 1px 2px rgba(0,0,0,0.7)'
-            }}>
-              {board.title || 'Sin título'}
-            </div>
-          </Board>
-        ))}
+        <Title>Tus Tableros</Title>
+        <Wrapper>
+          {/* Tableros existentes */}
+          {boards.map((board) => (
+            <Board
+              key={board._id}
+              onClick={() => handleBoardClick(board._id)}
+              isImage={board.backgroundImage ? true : false}
+              link={board.backgroundImage || board.backgroundColor || "#0079bf"}
+            >
+              <div style={{ 
+                fontWeight: 'bold', 
+                fontSize: '1rem',
+                textShadow: '1px 1px 2px rgba(0,0,0,0.7)'
+              }}>
+                {board.title || 'Sin título'}
+              </div>
+            </Board>
+          ))}
 
-        {/* Botón para crear nuevo tablero */}
-        <AddBoard onClick={handleCreateBoard}>
-          Crear nuevo tablero
-        </AddBoard>
+          {/* Botón para crear nuevo tablero */}
+          <AddBoard onClick={handleCreateBoard}>
+            Crear nuevo tablero
+          </AddBoard>
 
-        {/* Si no hay tableros, mostrar un tablero principal como ejemplo */}
-        {boards.length === 0 && (
-          <Board
-            onClick={() => console.log("Tablero principal clickeado")}
-            isImage={true}
-            link="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-          >
-            <div style={{ 
-              fontWeight: 'bold', 
-              fontSize: '1rem',
-              textShadow: '1px 1px 2px rgba(0,0,0,0.7)'
-            }}>
-              PRINCIPAL
-            </div>
-          </Board>
-        )}
-      </Wrapper>
-
-      {/* Debug info - remover en producción */}
-      {process.env.NODE_ENV === 'development' && (
-        <div style={{ 
-          position: 'fixed',
-          bottom: '10px',
-          left: '10px',
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          color: 'white',
-          padding: '10px',
-          borderRadius: '5px',
-          fontSize: '12px',
-          zIndex: 1000
-        }}>
-          <strong>Debug:</strong><br/>
-          Usuario: {userInfo?.name || 'No cargado'}<br/>
-          Token: {token ? 'Presente' : 'Ausente'}<br/>
-          Tableros: {boards.length}
-        </div>
-      )}
-    </Container>
+          {/* Si no hay tableros, mostrar un tablero principal como ejemplo */}
+          {boards.length === 0 && (
+            <Board
+              onClick={() => console.log("Tablero principal clickeado")}
+              isImage={true}
+              link="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+            >
+              <div style={{ 
+                fontWeight: 'bold', 
+                fontSize: '1rem',
+                textShadow: '1px 1px 2px rgba(0,0,0,0.7)'
+              }}>
+                PRINCIPAL
+              </div>
+            </Board>
+          )}
+        </Wrapper>
+      </Container>
+    </>
   );
 };
 
