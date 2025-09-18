@@ -38,15 +38,20 @@ export const userSlice = createSlice({
     loadStart: (state) => {
       state.pending = true;
     },
+
+    
     loadSuccess: (state, action) => {
       state.isAuthenticated = true;
-      state.userInfo = action.payload.user;
+      state.userInfo = action.payload.user.user;
       state.token = localStorage.getItem("token");
       state.pending = false;
     },
+    
     loadFailure: (state) => {
       state.pending = false;
     },
+
+    
     logout: (state) => {
       state.isAuthenticated = false;
       state.userInfo = null;
