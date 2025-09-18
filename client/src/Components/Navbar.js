@@ -1,4 +1,5 @@
-import React from 'react';
+// client/src/Components/Navbar.js
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import DropdownMenu from './DropdownMenu';
 import SearchBar from './SearchBar';
@@ -9,9 +10,7 @@ import { useHistory } from 'react-router-dom';
 const Container = styled.div`
 	height: 3rem;
 	width: 100%;
-	background-color: #333c87;
-	backdrop-filter: blur(24px);
-	position: fixed;
+	position: sticky;
 	top: 0;
 	left: 0;
 	display: flex;
@@ -20,6 +19,10 @@ const Container = styled.div`
 	justify-content: space-between;
 	padding: 0.5rem 1rem;
 	gap: 0.5rem;
+	background-color: ${({ scrolled }) => (scrolled ? '#2c346f' : '#333c87')};
+	backdrop-filter: blur(24px);
+	transition: background-color 0.3s ease-in-out;
+
 	${xs({
 		padding: '0.5rem, 0rem',
 	})}
@@ -71,9 +74,21 @@ const DropdownContainer = styled.div`
 
 const Navbar = (props) => {
 	const history = useHistory();
+	const [scrolled, setScrolled] = useState(false);
+
+	useEffect(() => {
+		const handleScroll = () => {
+			setScrolled(window.scrollY > 10);
+		};
+
+		window.addEventListener('scroll', handleScroll);
+		return () => {
+			window.removeEventListener('scroll', handleScroll);
+		};
+	}, []);
 
 	return (
-		<Container>
+		<Container scrolled={scrolled}>
 			<LeftSide>
 				<LogoContainer>
 					<TrelloLogo
@@ -103,3 +118,4 @@ const Navbar = (props) => {
 };
 
 export default Navbar;
+
