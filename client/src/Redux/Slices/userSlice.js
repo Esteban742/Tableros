@@ -1,9 +1,7 @@
-import { createSlice } from "@reduxjs/toolkit";
-
 const initialState = {
   userInfo: null,
   isAuthenticated: null,
-  pending: true,
+  pending: false, // 🔹 cambiar a false
   loading: false,
   token: localStorage.getItem("token"),
 };
@@ -16,7 +14,7 @@ export const userSlice = createSlice({
       state.pending = true;
     },
     registrationEnd: (state) => {
-      state.pending = false;
+      state.pending = false; // 🔹 al finalizar, habilita el botón
     },
     loginStart: (state) => {
       state.pending = true;
@@ -51,30 +49,15 @@ export const userSlice = createSlice({
       state.token = null;
       localStorage.removeItem("token");
     },
-    fetchingStart: (state)=>{
+    fetchingStart: (state) => {
       state.loading = true;
     },
     fetchingFinish: (state) => {
       state.loading = false;
     },
-    addNewBoard: (state,action) => {
+    addNewBoard: (state, action) => {
       state.userInfo.boards.unshift(action.payload);
-    }
+    },
   },
 });
 
-export const {
-  registrationStart,
-  registrationEnd,
-  loginStart,
-  loginFailure,
-  loginSuccess,
-  loadStart,
-  loadSuccess,
-  loadFailure,
-  logout,
-  fetchingStart,
-  fetchingFinish,
-  addNewBoard
-} = userSlice.actions;
-export default userSlice.reducer;
