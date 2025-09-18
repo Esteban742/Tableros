@@ -4,15 +4,16 @@ const User = require("../models/userModel");
 
 // Rutas que NO requieren token
 const pathsToExclude = [
-  { url: "/", methods: ["GET"] },
-  { url: /^\/static\/.*/, methods: ["GET"] },
+  { url: "/", methods: ["GET"] },                       // Página principal
+  { url: "/login", methods: ["GET"] },                  // SPA login page
+  { url: "/register", methods: ["GET"] },               // SPA register page
+  { url: /^\/static\/.*/, methods: ["GET"] },           // Archivos estáticos
   { url: "/favicon.ico", methods: ["GET"] },
   { url: "/manifest.json", methods: ["GET"] },
-  { url: "/api/users/login", methods: ["POST"] },
-  { url: "/api/users/register", methods: ["POST"] },
+  { url: "/api/users/login", methods: ["POST"] },       // API login
+  { url: "/api/users/register", methods: ["POST"] },    // API register
 ];
 
-// Middleware global de verificación de token
 const verifyTokenWrapper = async (req, res, next) => {
   try {
     const pathExcluded = pathsToExclude.some(
@@ -40,7 +41,6 @@ const verifyTokenWrapper = async (req, res, next) => {
       return res.status(401).json({ errMessage: "Token inválido" });
     }
 
-    // Guardar info del usuario en req
     const user = await User.findById(decoded.id).select("-password");
     if (!user) {
       console.log("[TokenMiddleware] ❌ Usuario no encontrado con ID del token");
@@ -58,6 +58,7 @@ const verifyTokenWrapper = async (req, res, next) => {
 };
 
 module.exports = verifyTokenWrapper;
+
 
 
 
