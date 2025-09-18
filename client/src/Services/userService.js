@@ -124,13 +124,20 @@ export const loadUser = async (dispatch) => {
   
   try {
     console.log("📤 Cargando usuario desde backend...");
+    
     const res = await axios.get(`${baseUrl}get-user`);
+    
     console.log("📥 Usuario cargado:", res.data);
     
-    dispatch(loadSuccess({ user: res.data }));
-    return res.data; // devolver usuario
+    // ✅ Si la respuesta tiene success: true, extraer solo el user
+    const userData = res.data.success ? res.data.user : res.data;
+  
+     dispatch(loadSuccess({ user: userData }));
+     return userData; // devolver solo el usuario, no toda la respuesta
+  
+    } catch (error) {
+
     
-  } catch (error) {
     console.error("❌ Error en loadUser:", error.response?.data || error.message);
     
     // Si el token es inválido, limpiar localStorage
