@@ -1,38 +1,39 @@
-// ProtectedRoute.js
-import React, { useEffect, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
+// src/Utils/ProtectedRoute.js
+import React, { useEffect } from "react";
 import { Route, Redirect } from "react-router-dom";
-import { loadUser } from "../Services/userService"; // Ajusta según tu estructura
+import { useDispatch, useSelector } from "react-redux";
+import { loadUser } from "../Services/userService"; // Asegúrate que tu thunk esté correcto
+import setBearer from "./setBearer"; // Función que setea token en axios
 
 const ProtectedRoute = ({ component: Component, ...rest }) => {
   const dispatch = useDispatch();
   const { user, loading } = useSelector((state) => state.user);
-  const [checkingAuth, setCheckingAuth] = useState(true);
 
+  // Cargar usuario al montar el componente
   useEffect(() => {
-    const fetchUser = async () => {
-      await dispatch(loadUser()); // Carga el usuario desde backend
-      setCheckingAuth(false);
-    };
-    fetchUser();
+    const token = localStorage.getItem("token");
+    if (token) setBearer(token); // setea Authorization header
+    dispatch(loadUser()); // thunk que actualiza Redux
   }, [dispatch]);
+
+  // Verificamos si está cargando
+  if (loading) {
+    return <div>⏳ Cargando usuario...</div>;
+  }
+
+  // Validamos autenticación
+  const isAuthenticated = !!user?.email;
 
   return (
     <Route
       {...rest}
-      render={(props) => {
-        if (checkingAuth || loading) {
-          return <div>⏳ Cargando usuario...</div>;
-        }
-        const isAuthenticated = !!user?.email;
-        if (!isAuthenticated) {
-          return <Redirect to="/login" />;
-        }
-        return <Component {...props} />;
-      }}
+      render={(props) =>
+        isAuthenticated ? <Component {...props} /> : <Redirect to="/login" />
+      }
     />
   );
 };
 
 export default ProtectedRoute;
+
 
