@@ -6,6 +6,8 @@ import Navbar from "../../Navbar";
 import { Container, Wrapper, Title, Board, AddBoard } from "./Styled";
 import CreateBoard from "../../Modals/CreateBoardModal/CreateBoard";
 import { useHistory } from "react-router";
+import axios from "axios";
+import setBearer from "../../../Utils/setBearer";
 
 const Boards = () => {
   const history = useHistory();
