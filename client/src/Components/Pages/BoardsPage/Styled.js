@@ -1,15 +1,18 @@
 import styled from 'styled-components';
 
 export const Container = styled.div`
-	background-image: url('https://i.postimg.cc/2Sv3t8fj/nano-banana-2025-09-11-T23-42-13.png');
-	background-position: 50%;
-	background-size: cover;
-	height: 100vh;
-	width: 100vw;
-	position: fixed;
-	top: 0;
-	left: 0;
+  background-image: url('https://i.postimg.cc/2Sv3t8fj/nano-banana-2025-09-11-T23-42-13.png');
+  background-position: 50%;
+  background-size: cover;
+  min-height: 100vh;   /* mejor que height fija */
+  width: 100vw;
+  position: relative;  /* 👈 ya no se queda fijo tapando todo */
+  top: 0;
+  left: 0;
+  padding-top: 3.5rem; /* 👈 espacio para que no tape el Navbar */
+  box-sizing: border-box;
 `;
+
 
 export const Title = styled.h1`
 	cursor: default;
@@ -25,17 +28,16 @@ export const Title = styled.h1`
 `;
 
 export const Wrapper = styled.div`
-	margin-top: 3.1rem;
-	width: 100%;
-	height: calc(100vh - 3.1rem);
-	padding: 1rem;
-	display: flex;
-	flex-direction: row;
-	justify-content: center;
-	align-items: center;
-	flex-wrap: wrap;
-	align-content: flex-start;
-	overflow-y: auto;
+  width: 100%;
+  height: calc(100vh - 3.5rem); 
+  padding: 1rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  overflow-y: auto;
 `;
 
 export const Board = styled.div`
