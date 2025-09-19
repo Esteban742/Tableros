@@ -47,7 +47,12 @@ const verifyTokenWrapper = async (req, res, next) => {
       return res.status(401).json({ errMessage: "Usuario no encontrado" });
     }
 
-    req.user = { id: user._id, email: user.email, name: user.name };
+   req.user = { 
+  id: user._id, 
+  email: user.email, 
+  name: user.name,
+  boards: user.boards || [] // ← AGREGAR ESTA LÍNEA
+};
     console.log(`[TokenMiddleware] ✅ Usuario autenticado correctamente: ${user.email}`);
 
     next();
