@@ -1,5 +1,6 @@
 const cardService = require('../services/cardService');
 const cloudinary = require('cloudinary').v2;
+const fs = require('fs');
 
 // Configurar Cloudinary
 cloudinary.config({
@@ -403,7 +404,7 @@ const updateCover = async (req, res) => {
 	);
 };
 
-// Función uploadAttachment con Cloudinary
+// Función uploadAttachment con Cloudinary - MODIFICADA PARA ARCHIVOS PÚBLICOS
 const uploadAttachment = async (req, res) => {
 	try {
 		const user = req.user;
@@ -417,13 +418,15 @@ const uploadAttachment = async (req, res) => {
 			return res.status(400).send({ errMessage: 'No file uploaded' });
 		}
 
-		// Subir archivo a Cloudinary
+		// Subir archivo a Cloudinary con acceso público
 		const uploadResult = await cloudinary.uploader.upload(req.file.path, {
 			resource_type: "auto", // Detecta automáticamente el tipo de archivo
 			folder: "tableros-attachments", // Organizar en carpeta
 			public_id: `${cardId}-${Date.now()}`, // ID único para el archivo
 			use_filename: true,
-			unique_filename: false
+			unique_filename: false,
+			access_mode: 'public', // IMPORTANTE: Hacer el archivo público
+			type: 'upload' // Tipo de almacenamiento
 		});
 
 		console.log("☁️ Archivo subido a Cloudinary:", uploadResult.secure_url);
@@ -432,7 +435,6 @@ const uploadAttachment = async (req, res) => {
 		const name = req.body?.name || req.file.originalname;
 
 		// Eliminar archivo temporal del servidor
-		const fs = require('fs');
 		if (fs.existsSync(req.file.path)) {
 			fs.unlinkSync(req.file.path);
 			console.log("🗑️ Archivo temporal eliminado:", req.file.path);
@@ -466,7 +468,6 @@ const uploadAttachment = async (req, res) => {
 		
 		// Limpiar archivo temporal en caso de error
 		if (req.file && req.file.path) {
-			const fs = require('fs');
 			if (fs.existsSync(req.file.path)) {
 				fs.unlinkSync(req.file.path);
 			}
