@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 require("dotenv").config();
 
 const userRoute = require("./routes/userRoute");
@@ -12,8 +13,17 @@ const tokenMiddleware = require("./middlewares/verifyTokenWrapper");
 
 const app = express();
 
+// Crear directorio uploads si no existe
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+  console.log("📁 Directorio 'uploads' creado");
+}
+
 // Middlewares básicos
 app.use(express.json());
+
+// Servir archivos estáticos del directorio uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Logger para ver todas las peticiones que llegan al backend
 app.use((req, res, next) => {
@@ -27,10 +37,10 @@ app.use(cors({
   credentials: true,
 }));
 
-// ✅ APLICAR EL MIDDLEWARE DE TOKEN GLOBALMENTE ANTES DE LAS RUTAS
+// APLICAR EL MIDDLEWARE DE TOKEN GLOBALMENTE ANTES DE LAS RUTAS
 app.use(tokenMiddleware);
 
-// ✅ RUTAS API (ahora TODAS pasan por el middleware de token)
+// RUTAS API (ahora TODAS pasan por el middleware de token)
 app.use("/api/users", userRoute);
 app.use("/api/boards", boardRoute);
 app.use("/api/lists", listRoute);
@@ -51,6 +61,18 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Puerto
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  console.log("📁 Directorio uploads configurado en:", path.join(__dirname, 'uploads'));
+});
+
+// Manejo de errores no capturados
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (error) => {
+  console.error('❌ Unhandled Rejection:', error);
+});
 
 
