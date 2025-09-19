@@ -1,4 +1,12 @@
 const cardService = require('../services/cardService');
+const cloudinary = require('cloudinary').v2;
+
+// Configurar Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 const create = async (req, res) => {
 	// Deconstruct the params
@@ -395,7 +403,7 @@ const updateCover = async (req, res) => {
 	);
 };
 
-// Función corregida para uploadAttachment 
+// Función uploadAttachment con Cloudinary
 const uploadAttachment = async (req, res) => {
 	try {
 		const user = req.user;
@@ -409,13 +417,26 @@ const uploadAttachment = async (req, res) => {
 			return res.status(400).send({ errMessage: 'No file uploaded' });
 		}
 
-		// Build public URL for the uploaded file
-		const protocol = req.protocol;
-		const host = req.get('host');
-		const linkUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+		// Subir archivo a Cloudinary
+		const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+			resource_type: "auto", // Detecta automáticamente el tipo de archivo
+			folder: "tableros-attachments", // Organizar en carpeta
+			public_id: `${cardId}-${Date.now()}`, // ID único para el archivo
+			use_filename: true,
+			unique_filename: false
+		});
+
+		console.log("☁️ Archivo subido a Cloudinary:", uploadResult.secure_url);
+
+		const linkUrl = uploadResult.secure_url;
 		const name = req.body?.name || req.file.originalname;
 
-		console.log("📁 Generated link URL:", linkUrl);
+		// Eliminar archivo temporal del servidor
+		const fs = require('fs');
+		if (fs.existsSync(req.file.path)) {
+			fs.unlinkSync(req.file.path);
+			console.log("🗑️ Archivo temporal eliminado:", req.file.path);
+		}
 
 		await cardService.addAttachment(
 			cardId,
@@ -432,18 +453,27 @@ const uploadAttachment = async (req, res) => {
 				
 				console.log("✅ Attachment added successfully:", result);
 				
-				// Return both the DB result and the computed link/name to the client
 				return res.status(200).send({ 
 					attachmentId: result._id || result.attachmentId,
 					link: linkUrl, 
-					name 
+					name,
+					publicId: uploadResult.public_id // Para poder eliminar después si es necesario
 				});
 			}
 		);
 	} catch (error) {
 		console.error("❌ Upload attachment error:", error);
+		
+		// Limpiar archivo temporal en caso de error
+		if (req.file && req.file.path) {
+			const fs = require('fs');
+			if (fs.existsSync(req.file.path)) {
+				fs.unlinkSync(req.file.path);
+			}
+		}
+		
 		return res.status(500).send({ 
-			errMessage: 'Error uploading file', 
+			errMessage: 'Error uploading file to cloud storage', 
 			details: error.message 
 		});
 	}
