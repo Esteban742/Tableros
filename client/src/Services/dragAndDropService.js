@@ -1,15 +1,17 @@
 import api from "./api";
 import { updateCardDragDrop, updateListDragDrop } from '../Redux/Slices/listSlice';
 import { openAlert } from '../Redux/Slices/alertSlice';
+import setBearer from "../Utils/setBearer";
 
-const baseUrl = '/list'; // ya no pones localhost
+// ✅ CORREGIR LA URL BASE
+const API = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
+const baseUrl = `${API}/lists`; // Cambiar de '/list' a '/api/lists'
 
 let submitCall = Promise.resolve();
 
 export const updateCardOrder = async (props, dispatch) => {
   let savedList = JSON.parse(JSON.stringify(props.allLists));
   let tempList = JSON.parse(JSON.stringify(props.allLists));
-
   let cardItem = props.allLists
     .filter((list) => list._id === props.sourceId)[0]
     .cards.filter((card) => card._id === props.cardId)[0];
@@ -27,7 +29,6 @@ export const updateCardOrder = async (props, dispatch) => {
       if (list._id === props.sourceId) list.cards.splice(props.sourceIndex, 1);
       return list;
     });
-
     tempList = tempList.map((list) => {
       if (list._id === props.destinationId) {
         let temp = Array.from(list.cards);
@@ -43,6 +44,10 @@ export const updateCardOrder = async (props, dispatch) => {
   }
 
   await dispatch(updateCardDragDrop(tempList));
+
+  // ✅ CONFIGURAR TOKEN ANTES DE LA PETICIÓN
+  const token = localStorage.getItem("token");
+  if (token) setBearer(token);
 
   submitCall = submitCall.then(() =>
     api.post(baseUrl + '/change-card-order', {
@@ -71,11 +76,14 @@ export const updateListOrder = async (props, dispatch) => {
   let savedOrder = JSON.parse(JSON.stringify(props.allLists));
   let tempList = JSON.parse(JSON.stringify(props.allLists));
   let list = props.allLists.filter((item) => item._id === props.listId)[0];
-
+  
   tempList.splice(props.sourceIndex, 1);
   tempList.splice(props.destinationIndex, 0, list);
-
   await dispatch(updateListDragDrop(tempList));
+
+  // ✅ CONFIGURAR TOKEN ANTES DE LA PETICIÓN
+  const token = localStorage.getItem("token");
+  if (token) setBearer(token);
 
   submitCall = submitCall.then(() =>
     api.post(baseUrl + '/change-list-order', {
