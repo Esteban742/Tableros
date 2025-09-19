@@ -395,19 +395,27 @@ const updateCover = async (req, res) => {
 	);
 };
 
-// Handle file upload (e.g., PDF) and register it as an attachment
+// Función corregida para uploadAttachment 
 const uploadAttachment = async (req, res) => {
 	try {
 		const user = req.user;
 		const { boardId, listId, cardId } = req.params;
+		
+		console.log("📁 Upload attachment - Params:", { boardId, listId, cardId });
+		console.log("📁 Upload attachment - File:", req.file);
+		console.log("📁 Upload attachment - Body:", req.body);
+		
 		if (!req.file) {
 			return res.status(400).send({ errMessage: 'No file uploaded' });
 		}
-		// Build public URL for the uploaded file. Example: http://localhost:3001/uploads/<filename>
+
+		// Build public URL for the uploaded file
 		const protocol = req.protocol;
 		const host = req.get('host');
 		const linkUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
 		const name = req.body?.name || req.file.originalname;
+
+		console.log("📁 Generated link URL:", linkUrl);
 
 		await cardService.addAttachment(
 			cardId,
@@ -417,13 +425,27 @@ const uploadAttachment = async (req, res) => {
 			linkUrl,
 			name,
 			(err, result) => {
-				if (err) return res.status(500).send(err);
+				if (err) {
+					console.error("❌ Error in cardService.addAttachment:", err);
+					return res.status(500).send(err);
+				}
+				
+				console.log("✅ Attachment added successfully:", result);
+				
 				// Return both the DB result and the computed link/name to the client
-				return res.status(200).send({ ...result, link: linkUrl, name });
+				return res.status(200).send({ 
+					attachmentId: result._id || result.attachmentId,
+					link: linkUrl, 
+					name 
+				});
 			}
 		);
 	} catch (error) {
-		return res.status(500).send({ errMessage: 'Something went wrong', details: error.message });
+		console.error("❌ Upload attachment error:", error);
+		return res.status(500).send({ 
+			errMessage: 'Error uploading file', 
+			details: error.message 
+		});
 	}
 };
 
