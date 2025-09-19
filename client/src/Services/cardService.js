@@ -52,16 +52,21 @@ import {
   updateMemberOfCard,
   updateStartDueDatesOfCard,
 } from '../Redux/Slices/listSlice';
+import setBearer from '../Utils/setBearer';
 
+// ✅ CORREGIDO: URL con plural
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
 const baseUrl = `${API_URL}/cards`;
 
 let submitCall = Promise.resolve();
 
-
 export const getCard = async (cardId, listId, boardId, dispatch) => {
 	dispatch(setPending(true));
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		let response = '';
 		submitCall = submitCall.then(() =>
 			axios.get(baseUrl + '/' + boardId + '/' + listId + '/' + cardId).then((res) => {
@@ -86,6 +91,10 @@ export const getCard = async (cardId, listId, boardId, dispatch) => {
 
 export const titleUpdate = async (cardId, listId, boardId, title, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(setCardTitle({ listId, cardId, title }));
 		dispatch(updateTitle(title));
 
@@ -105,6 +114,10 @@ export const titleUpdate = async (cardId, listId, boardId, title, dispatch) => {
 
 export const descriptionUpdate = async (cardId, listId, boardId, description, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(updateDescription(description));
 		dispatch(updateDescriptionOfCard({ listId, cardId, description }));
 
@@ -124,6 +137,10 @@ export const descriptionUpdate = async (cardId, listId, boardId, description, di
 
 export const comment = async (cardId, listId, boardId, text, userName, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(setPending(true));
 
 		let response = '';
@@ -153,6 +170,10 @@ export const comment = async (cardId, listId, boardId, text, userName, dispatch)
 
 export const commentUpdate = async (cardId, listId, boardId, text, commentId, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(updateComment(commentId, text));
 
 		submitCall = submitCall.then(() =>
@@ -173,6 +194,10 @@ export const commentUpdate = async (cardId, listId, boardId, text, commentId, di
 
 export const commentDelete = async (cardId, listId, boardId, commentId, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(deleteComment(commentId));
 
 		submitCall = submitCall.then(() =>
@@ -191,6 +216,10 @@ export const commentDelete = async (cardId, listId, boardId, commentId, dispatch
 
 export const memberAdd = async (cardId, listId, boardId, memberId, memberName, memberColor, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(addMember({ memberId, memberName, memberColor }));
 		dispatch(updateMemberOfCard({ listId, cardId, memberId, memberName, memberColor }));
 
@@ -212,6 +241,10 @@ export const memberAdd = async (cardId, listId, boardId, memberId, memberName, m
 
 export const memberDelete = async (cardId, listId, boardId, memberId, memberName, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(deleteMember({ memberId }));
 		dispatch(deleteMemberOfCard({ listId, cardId, memberId }));
 
@@ -231,6 +264,10 @@ export const memberDelete = async (cardId, listId, boardId, memberId, memberName
 
 export const labelCreate = async (cardId, listId, boardId, text, color, backColor, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(createLabel({ _id: 'notUpdated', text, color, backColor, selected: true }));
 
 		let response = '';
@@ -263,6 +300,10 @@ export const labelCreate = async (cardId, listId, boardId, text, color, backColo
 
 export const labelUpdate = async (cardId, listId, boardId, labelId, label, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(updateLabel({ labelId: labelId, text: label.text, color: label.color, backColor: label.backColor }));
 		dispatch(
 			updateLabelOfCard({
@@ -291,6 +332,10 @@ export const labelUpdate = async (cardId, listId, boardId, labelId, label, dispa
 
 export const labelDelete = async (cardId, listId, boardId, labelId, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(deleteLabel(labelId));
 		dispatch(deleteLabelOfCard({ listId, cardId, labelId }));
 
@@ -310,6 +355,10 @@ export const labelDelete = async (cardId, listId, boardId, labelId, dispatch) =>
 
 export const labelUpdateSelection = async (cardId, listId, boardId, labelId, selected, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(updateLabelSelection({ labelId: labelId, selected: selected }));
 		dispatch(updateLabelSelectionOfCard({ listId, cardId, labelId, selected }));
 
@@ -332,6 +381,10 @@ export const labelUpdateSelection = async (cardId, listId, boardId, labelId, sel
 
 export const checklistCreate = async (cardId, listId, boardId, title, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(createChecklist({ _id: 'notUpdated', title }));
 
 		let response = '';
@@ -360,6 +413,10 @@ export const checklistCreate = async (cardId, listId, boardId, title, dispatch) 
 
 export const checklistDelete = async (cardId, listId, boardId, checklistId, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(deleteChecklist(checklistId));
 		dispatch(deleteChecklistOfCard({ listId, cardId, checklistId }));
 		submitCall = submitCall.then(() =>
@@ -380,6 +437,10 @@ export const checklistDelete = async (cardId, listId, boardId, checklistId, disp
 
 export const checklistItemAdd = async (cardId, listId, boardId, checklistId, text, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(addChecklistItem({ checklistId: checklistId, _id: 'notUpdated', text: text }));
 
 		let response = '';
@@ -429,6 +490,10 @@ export const checklistItemCompletedSet = async (
 	dispatch
 ) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(
 			setChecklistItemCompleted({
 				checklistId: checklistId,
@@ -478,6 +543,10 @@ export const checklistItemCompletedSet = async (
 
 export const checklistItemTextSet = async (cardId, listId, boardId, checklistId, checklistItemId, text, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(setChecklistItemText({ checklistId: checklistId, checklistItemId: checklistItemId, text: text }));
 		dispatch(
 			setChecklistItemTextOfCard({
@@ -521,6 +590,10 @@ export const checklistItemTextSet = async (cardId, listId, boardId, checklistId,
 
 export const checklistItemDelete = async (cardId, listId, boardId, checklistId, checklistItemId, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(deleteChecklistItem({ checklistId: checklistId, checklistItemId: checklistItemId }));
 		dispatch(
 			deleteChecklistItemOfCard({ listId, cardId, checklistId: checklistId, checklistItemId: checklistItemId })
@@ -555,6 +628,10 @@ export const checklistItemDelete = async (cardId, listId, boardId, checklistId, 
 
 export const startDueDatesUpdate = async (cardId, listId, boardId, startDate, dueDate, dueTime, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(updateStartDueDates({ startDate, dueDate, dueTime }));
 		dispatch(updateStartDueDatesOfCard({ listId, cardId, startDate, dueDate, dueTime }));
 
@@ -578,6 +655,10 @@ export const startDueDatesUpdate = async (cardId, listId, boardId, startDate, du
 
 export const dateCompletedUpdate = async (cardId, listId, boardId, completed, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(updateDateCompleted(completed));
 		dispatch(updateDateCompletedOfCard({ listId, cardId, completed }));
 
@@ -599,6 +680,10 @@ export const dateCompletedUpdate = async (cardId, listId, boardId, completed, di
 
 export const attachmentAdd = async (cardId, listId, boardId, link, name, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(addAttachment({ link: link, name: name, _id: 'notUpdated', date: Date() }));
 
 		let response = '';
@@ -637,6 +722,10 @@ export const attachmentAdd = async (cardId, listId, boardId, link, name, dispatc
 
 export const attachmentUpload = async (cardId, listId, boardId, file, name, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		let response = '';
 		const formData = new FormData();
 		formData.append('file', file);
@@ -680,6 +769,10 @@ export const attachmentUpload = async (cardId, listId, boardId, file, name, disp
 
 export const attachmentDelete = async (cardId, listId, boardId, attachmentId, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(deleteAttachment(attachmentId));
 		dispatch(deleteAttachmentOfCard({ listId, cardId, attachmentId }));
 
@@ -701,6 +794,10 @@ export const attachmentDelete = async (cardId, listId, boardId, attachmentId, di
 
 export const attachmentUpdate = async (cardId, listId, boardId, attachmentId, link, name, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(updateAttachment({ attachmentId: attachmentId, link: link, name: name }));
 
 		submitCall = submitCall.then(() =>
@@ -722,6 +819,10 @@ export const attachmentUpdate = async (cardId, listId, boardId, attachmentId, li
 
 export const coverUpdate = async (cardId, listId, boardId, color, isSizeOne, dispatch) => {
 	try {
+		// ✅ AÑADIDO: Configurar token
+		const token = localStorage.getItem("token");
+		if (token) setBearer(token);
+
 		dispatch(updateCover({ color: color, isSizeOne: isSizeOne }));
 		dispatch(updateCoverOfCard({ listId, cardId, color, isSizeOne }));
 
