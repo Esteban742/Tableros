@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
-const mime = require('mime-types');
 require("dotenv").config();
 
 const userRoute = require("./routes/userRoute");
@@ -14,10 +13,10 @@ const tokenMiddleware = require("./middlewares/verifyTokenWrapper");
 
 const app = express();
 
-// Crear directorio uploads si no existe
+// Crear directorio uploads temporal (solo para procesamiento temporal antes de subir a Cloudinary)
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
-  console.log("📁 Directorio 'uploads' creado");
+  console.log("📁 Directorio temporal 'uploads' creado");
 }
 
 // Middlewares básicos
@@ -28,51 +27,6 @@ app.use((req, res, next) => {
   console.log("➡️ Petición entrante:", req.method, req.url);
   next();
 });
-
-// Servir archivos estáticos con Content-Type correcto
-app.use('/uploads', (req, res, next) => {
-  const filePath = path.join(__dirname, 'uploads', req.path);
-  
-  // Verificar que el archivo existe
-  if (!fs.existsSync(filePath)) {
-    console.log("❌ Archivo no encontrado:", filePath);
-    return res.status(404).send('Archivo no encontrado');
-  }
-  
-  const contentType = mime.lookup(filePath) || 'application/octet-stream';
-  
-  console.log("📁 Sirviendo archivo:", {
-    path: req.path,
-    contentType: contentType,
-    exists: fs.existsSync(filePath)
-  });
-  
-  // Configurar headers específicos por tipo de archivo
-  res.setHeader('Content-Type', contentType);
-  res.setHeader('Cache-Control', 'public, max-age=31557600');
-  
-  if (contentType === 'application/pdf') {
-    res.setHeader('Content-Disposition', 'inline');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Accept-Ranges', 'bytes');
-  } else if (contentType.startsWith('image/')) {
-    res.setHeader('Content-Disposition', 'inline');
-  }
-  
-  next();
-}, express.static(path.join(__dirname, 'uploads'), {
-  // Opciones adicionales para express.static
-  dotfiles: 'ignore',
-  etag: false,
-  extensions: ['pdf', 'jpg', 'png', 'gif', 'doc', 'docx'],
-  index: false,
-  maxAge: '1d',
-  redirect: false,
-  setHeaders: function (res, path, stat) {
-    // Headers adicionales si es necesario
-    res.set('x-timestamp', Date.now());
-  }
-}));
 
 // CORS
 app.use(cors({
@@ -106,7 +60,8 @@ mongoose.connect(process.env.MONGO_URI)
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-  console.log("📁 Directorio uploads configurado en:", path.join(__dirname, 'uploads'));
+  console.log("☁️ Archivos se almacenarán en Cloudinary (no localmente)");
+  console.log("📁 Directorio temporal uploads/ solo para procesamiento");
 });
 
 // Manejo de errores no capturados
@@ -117,5 +72,4 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (error) => {
   console.error('❌ Unhandled Rejection:', error);
 });
-
 
