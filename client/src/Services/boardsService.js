@@ -84,6 +84,15 @@ export const createBoard = async (props, dispatch) => {
 export const getBoard = async (boardId, dispatch) => {
   console.log("🔍 getBoard - URL:", `${baseUrl}/${boardId}`);
   
+  // ✅ AÑADIDO: Configurar token antes de la petición
+  const token = localStorage.getItem("token");
+  if (token) {
+    console.log("🔑 Configurando token para getBoard");
+    setBearer(token);
+  } else {
+    console.warn("⚠️ No se encontró token para getBoard");
+  }
+  
   dispatch(setLoading(true));
   try {
     const res = await axios.get(`${baseUrl}/${boardId}`);
@@ -102,6 +111,12 @@ export const getBoard = async (boardId, dispatch) => {
 
 export const boardTitleUpdate = async (title, boardId, dispatch) => {
   console.log("📝 Actualizando título del tablero:", { title, boardId });
+  
+  // ✅ AÑADIDO: Configurar token antes de la petición
+  const token = localStorage.getItem("token");
+  if (token) {
+    setBearer(token);
+  }
   
   try {
     dispatch(updateTitle(title));
