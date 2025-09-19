@@ -1,7 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  boardsData: {},
+  // ✅ CORREGIDO: boardsData debe ser un array, no un objeto
+  boardsData: [],
   pending: true,
   backgroundImages: [
     "https://images.unsplash.com/photo-1636471815144-616b00e21f24",
@@ -27,24 +28,36 @@ const boardsSlice = createSlice({
       state.pending = true;
     },
     successFetchingBoards: (state, action) => {
-      state.boardsData = action.payload.boards;
+      // ✅ CORREGIDO: Asegurar que sea un array
+      state.boardsData = Array.isArray(action.payload.boards) 
+        ? action.payload.boards 
+        : [];
       state.pending = false;
     },
     failFetchingBoards: (state) => {
       state.pending = false;
+      // ✅ AGREGADO: Limpiar boardsData en caso de error
+      state.boardsData = [];
     },
     startCreatingBoard: (state) => {
       state.creating = true;
     },
     successCreatingBoard: (state, action) => {
-      state.boardsData.push(action.payload);
+      // ✅ CORREGIDO: Verificar que boardsData sea array antes de push
+      if (Array.isArray(state.boardsData)) {
+        state.boardsData.push(action.payload);
+      } else {
+        state.boardsData = [action.payload];
+      }
       state.creating = false;
     },
     failCreatingBoard: (state) => {
-      state.creating = true;
+      // ✅ CORREGIDO: Debe ser false, no true
+      state.creating = false;
     },
-    reset:(state)=>{
-      state=initialState;
+    reset: (state) => {
+      // ✅ CORREGIDO: Forma correcta de resetear estado
+      Object.assign(state, initialState);
     }
   },
 });
@@ -58,4 +71,5 @@ export const {
   failCreatingBoard,
   reset
 } = boardsSlice.actions;
+
 export default boardsSlice.reducer;
