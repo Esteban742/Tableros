@@ -11,7 +11,8 @@ const pathsToExclude = [
   { url: "/favicon.ico", methods: ["GET"] },
   { url: "/manifest.json", methods: ["GET"] },
   { url: "/api/users/login", methods: ["POST"] },       // API login
-  { url: "/api/users/register", methods: ["POST"] },    // API register
+  { url: "/api/users/register", methods: ["POST"] },
+  { url: /^\/uploads\/.*/, methods: ["GET"] },// API register
 ];
 
 const verifyTokenWrapper = async (req, res, next) => {
