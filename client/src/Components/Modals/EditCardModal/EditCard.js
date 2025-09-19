@@ -37,6 +37,7 @@ export default function EditCard(props) {
 	const { cardId, listId, boardId } = props.ids;
 	const dispatch = useDispatch();
 	const thisCard = useSelector((state) => state.card);
+
 	React.useEffect(() => {
 		if (props.open) {
 			getCard(cardId, listId, boardId, dispatch);
@@ -47,39 +48,49 @@ export default function EditCard(props) {
 		<div style={{ position: 'relative' }}>
 			<Modal open={props.open} onClose={props.callback} style={{ overflow: 'auto' }}>
 				<Container>
-					<CoverContainer color={!thisCard.pending ? thisCard.cover.color : null}>
+					{/* Corrección en línea 50: Verificación de seguridad para thisCard.cover */}
+					<CoverContainer color={!thisCard.pending && thisCard.cover ? thisCard.cover.color : null}>
 						<CoverButtonWrapper>
 							<IconButton title='Cover' icon={<CoverIcon fontSize='small' />} />
 						</CoverButtonWrapper>
 					</CoverContainer>
+					
 					<TitleContainer>{!thisCard.pending && <Title />}</TitleContainer>
+					
 					<Wrapper>
 						<MainContainer>
 							{!thisCard.pending ? (
 								<>
-									{(thisCard.members.length > 0 ||
-										thisCard.labels.filter((label) => label.selected).length > 0 ||
-										thisCard.date.startDate ||
-										thisCard.date.dueDate) && (
+									{/* Verificaciones de seguridad para evitar errores cuando los datos no están cargados */}
+									{((thisCard.members?.length > 0) ||
+										(thisCard.labels?.filter((label) => label?.selected).length > 0) ||
+										thisCard.date?.startDate ||
+										thisCard.date?.dueDate) && (
 										<FeaturesContainer>
 											<Features />
 										</FeaturesContainer>
 									)}
+									
 									<DescriptionContainer>
 										<Description />
 									</DescriptionContainer>
-									{thisCard.attachments.length > 0 && (
+									
+									{/* Verificación de seguridad para attachments */}
+									{thisCard.attachments?.length > 0 && (
 										<AttachmentContainer>
 											<Attachments />
 										</AttachmentContainer>
 									)}
-									{thisCard.checklists.length > 0 && (
+									
+									{/* Verificación de seguridad para checklists */}
+									{thisCard.checklists?.length > 0 && (
 										<ChecklistContainer>
 											{thisCard.checklists.map((list) => {
 												return <Checklist key={list._id} {...list} />;
 											})}
 										</ChecklistContainer>
 									)}
+									
 									<ActivityContainer>
 										<Activity />
 									</ActivityContainer>
@@ -88,6 +99,7 @@ export default function EditCard(props) {
 								<LoadingScreen image={CardLoadingSvg} />
 							)}
 						</MainContainer>
+						
 						<RightContainer>
 							<AddToCardContainer>
 								<AddToCard />
@@ -97,6 +109,7 @@ export default function EditCard(props) {
 							</ActionsContainer>
 						</RightContainer>
 					</Wrapper>
+					
 					<CloseIconWrapper onClick={props.callback}>
 						<CloseIcon fontSize='small' color='black' />
 					</CloseIconWrapper>
