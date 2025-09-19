@@ -10,6 +10,7 @@ import {
 } from "../Redux/Slices/boardsSlice";
 import { addNewBoard } from "../Redux/Slices/userSlice";
 import { setLoading, successFetchingBoard, updateTitle } from "../Redux/Slices/boardSlice";
+import setBearer from "../Utils/setBearer";
 
 // ✅ CORREGIDO: URL consistente
 const API = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
