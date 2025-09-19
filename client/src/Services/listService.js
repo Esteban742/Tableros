@@ -5,7 +5,7 @@ import { setLoading, successCreatingCard, deleteCard } from "../Redux/Slices/lis
 // Base URL dinámico
 const baseUrl =
   process.env.NODE_ENV === "production"
-    ? "https://tableros-53ww.onrender.com/api/card"
+    ? "https://tableros-53ww.onrender.com/api/cards"
     : "http://localhost:3001/api/cards";
 
 export const createCard = async (title, listId, boardId, dispatch) => {
