@@ -86,13 +86,17 @@ export const getBoard = async (boardId, dispatch) => {
   console.log("🔍 getBoard - URL:", `${baseUrl}/${boardId}`);
   
   // ✅ AÑADIDO: Configurar token antes de la petición
-  const token = localStorage.getItem("token");
-  if (token) {
-    console.log("🔑 Configurando token para getBoard");
-    setBearer(token);
-  } else {
-    console.warn("⚠️ No se encontró token para getBoard");
-  }
+const token = localStorage.getItem("token");
+if (token) {
+  console.log("🔑 Configurando token para getBoard");
+  setBearer(token);
+  
+  // Verificar el header exacto que se envía
+  const authHeader = axios.defaults.headers.common["Authorization"];
+  console.log("📤 Authorization header completo:", authHeader);
+} else {
+  console.warn("⚠️ No se encontró token para getBoard");
+}
   
   dispatch(setLoading(true));
   try {
