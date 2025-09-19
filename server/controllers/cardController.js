@@ -420,7 +420,7 @@ const uploadAttachment = async (req, res) => {
 
 		// Subir archivo a Cloudinary con acceso público
 		const uploadResult = await cloudinary.uploader.upload(req.file.path, {
-			resource_type: "auto", // Detecta automáticamente el tipo de archivo
+			resource_type: "raw", // Detecta automáticamente el tipo de archivo
 			folder: "tableros-attachments", // Organizar en carpeta
 			public_id: `${cardId}-${Date.now()}`, // ID único para el archivo
 			use_filename: true,
