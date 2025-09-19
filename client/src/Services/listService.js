@@ -6,7 +6,7 @@ import { setLoading, successCreatingCard, deleteCard } from "../Redux/Slices/lis
 const baseUrl =
   process.env.NODE_ENV === "production"
     ? "https://tableros-53ww.onrender.com/api/card"
-    : "http://localhost:3001/api/card";
+    : "http://localhost:3001/api/cards";
 
 export const createCard = async (title, listId, boardId, dispatch) => {
   dispatch(setLoading(true));
