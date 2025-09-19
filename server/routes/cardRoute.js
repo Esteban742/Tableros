@@ -1,29 +1,12 @@
 const express = require('express');
 const cardController = require('../controllers/cardController');
 const multer = require('multer');
-const path = require('path');
 
-// Configuración mejorada de multer con diskStorage
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    // Conservar la extensión original para evitar corrupción
-    const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
-    const timestamp = Date.now();
-    const random = Math.round(Math.random() * 1E9);
-    
-    // Crear nombre único pero con extensión correcta
-    cb(null, `${name}-${timestamp}-${random}${ext}`);
-  }
-});
-
+// Configuración simplificada de multer para archivos temporales (antes de subir a Cloudinary)
 const upload = multer({ 
-  storage: storage,
+  dest: 'uploads/', // Directorio temporal
   limits: { 
-    fileSize: 50 * 1024 * 1024 // Aumentar a 50MB
+    fileSize: 50 * 1024 * 1024 // 50MB limit
   },
   fileFilter: (req, file, cb) => {
     console.log("📁 Archivo recibido:", {
@@ -32,14 +15,16 @@ const upload = multer({
       size: file.size
     });
     
-    // Permitir tipos de archivo comunes
+    // Tipos de archivo permitidos
     const allowedTypes = [
       'application/pdf',
       'image/jpeg',
       'image/png', 
       'image/gif',
+      'image/webp',
       'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
     ];
     
     if (allowedTypes.includes(file.mimetype)) {
@@ -93,7 +78,7 @@ route.post('/:boardId/:listId/:cardId/add-attachment', cardController.addAttachm
 route.delete('/:boardId/:listId/:cardId/:attachmentId/delete-attachment', cardController.deleteAttachment);
 route.put('/:boardId/:listId/:cardId/:attachmentId/update-attachment', cardController.updateAttachment);
 
-// Upload de archivos con validación mejorada
+// Upload de archivos - Ahora usando Cloudinary
 route.post('/:boardId/:listId/:cardId/upload-attachment', upload.single('file'), cardController.uploadAttachment);
 
 // Cover
