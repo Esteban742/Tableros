@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
+const mime = require('mime-types');
 require("dotenv").config();
-
 const userRoute = require("./routes/userRoute");
 const boardRoute = require("./routes/boardRoute");
 const listRoute = require("./routes/listRoute");
@@ -22,14 +22,21 @@ if (!fs.existsSync('uploads')) {
 // Middlewares básicos
 app.use(express.json());
 
-// Servir archivos estáticos del directorio uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Logger para ver todas las peticiones que llegan al backend
+// Logger
 app.use((req, res, next) => {
   console.log("➡️ Petición entrante:", req.method, req.url);
   next();
 });
+
+// Servir archivos estáticos con Content-Type correcto
+app.use('/uploads', (req, res, next) => {
+  const filePath = path.join(__dirname, 'uploads', req.path);
+  const contentType = mime.lookup(filePath) || 'application/octet-stream';
+  
+  res.setHeader('Content-Type', contentType);
+  res.setHeader('Content-Disposition', 'inline'); // Para mostrar en el navegador en lugar de descargar
+  next();
+}, express.static(path.join(__dirname, 'uploads')));
 
 // CORS
 app.use(cors({
@@ -40,7 +47,7 @@ app.use(cors({
 // APLICAR EL MIDDLEWARE DE TOKEN GLOBALMENTE ANTES DE LAS RUTAS
 app.use(tokenMiddleware);
 
-// RUTAS API (ahora TODAS pasan por el middleware de token)
+// RUTAS API
 app.use("/api/users", userRoute);
 app.use("/api/boards", boardRoute);
 app.use("/api/lists", listRoute);
@@ -49,7 +56,7 @@ app.use("/api/cards", cardRoute);
 // Servir React build
 app.use(express.static(path.join(__dirname, "../client/build")));
 
-// Catch-all handler: envía de vuelta React's index.html file
+// Catch-all handler
 app.get("*", (req, res) => {
   res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
 });
