@@ -5,6 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const mime = require('mime-types');
 require("dotenv").config();
+
 const userRoute = require("./routes/userRoute");
 const boardRoute = require("./routes/boardRoute");
 const listRoute = require("./routes/listRoute");
@@ -31,12 +32,47 @@ app.use((req, res, next) => {
 // Servir archivos estáticos con Content-Type correcto
 app.use('/uploads', (req, res, next) => {
   const filePath = path.join(__dirname, 'uploads', req.path);
+  
+  // Verificar que el archivo existe
+  if (!fs.existsSync(filePath)) {
+    console.log("❌ Archivo no encontrado:", filePath);
+    return res.status(404).send('Archivo no encontrado');
+  }
+  
   const contentType = mime.lookup(filePath) || 'application/octet-stream';
   
+  console.log("📁 Sirviendo archivo:", {
+    path: req.path,
+    contentType: contentType,
+    exists: fs.existsSync(filePath)
+  });
+  
+  // Configurar headers específicos por tipo de archivo
   res.setHeader('Content-Type', contentType);
-  res.setHeader('Content-Disposition', 'inline'); // Para mostrar en el navegador en lugar de descargar
+  res.setHeader('Cache-Control', 'public, max-age=31557600');
+  
+  if (contentType === 'application/pdf') {
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Accept-Ranges', 'bytes');
+  } else if (contentType.startsWith('image/')) {
+    res.setHeader('Content-Disposition', 'inline');
+  }
+  
   next();
-}, express.static(path.join(__dirname, 'uploads')));
+}, express.static(path.join(__dirname, 'uploads'), {
+  // Opciones adicionales para express.static
+  dotfiles: 'ignore',
+  etag: false,
+  extensions: ['pdf', 'jpg', 'png', 'gif', 'doc', 'docx'],
+  index: false,
+  maxAge: '1d',
+  redirect: false,
+  setHeaders: function (res, path, stat) {
+    // Headers adicionales si es necesario
+    res.set('x-timestamp', Date.now());
+  }
+}));
 
 // CORS
 app.use(cors({
