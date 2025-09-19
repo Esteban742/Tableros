@@ -88,8 +88,10 @@ const MemberComponent = (props) => {
 	const dispatch = useDispatch();
 	const card = useSelector((state) => state.card);
 	const boardId = useSelector((state) => state.board.id);
-	const isMember = card.members.some((a) => a.user === props.user);
-
+	
+	// Corrección línea 91: Verificación de seguridad para card.members
+	const isMember = card.members?.some((a) => a.user === props.user) || false;
+	
 	const handleToggleCardMember = async () => {
 		if (isMember) {
 			await memberDelete(card.cardId, card.listId, card.boardId, props.user, props.name, dispatch);
@@ -97,24 +99,22 @@ const MemberComponent = (props) => {
 			await memberAdd(card.cardId, card.listId, card.boardId, props.user, props.name, props.color, dispatch);
 		}
 	};
-
+	
 	const handleRemoveFromBoard = async () => {
 		await boardMemberRemove(boardId, { memberId: props.user }, dispatch);
 	};
-
+	
 	return (
 		<MemberWrapper>
 			<Avatar sx={{ width: 28, height: 28, bgcolor: props.color, fontSize: '0.875rem', fontWeight: '800' }}>
-				{props.name[0].toUpperCase()}
+				{props.name?.[0]?.toUpperCase() || 'U'}
 			</Avatar>
 			<MemberName>{props.name}</MemberName>
-
 			{/* Botón para agregar/quitar del card */}
 			<ActionBtn onClick={handleToggleCardMember} color={isMember ? '#0079bf' : '#3b873e'}>
 				{isMember ? 'Quitar de la tarjeta' : 'Agregar a la tarjeta'}
 				{isMember && <DoneIcon fontSize="small" style={{ marginLeft: 4 }} />}
 			</ActionBtn>
-
 			{/* Botón para quitar del tablero */}
 			{props.role !== 'owner' && (
 				<RemoveBtn title="Eliminar del tablero" onClick={handleRemoveFromBoard}>
@@ -127,13 +127,15 @@ const MemberComponent = (props) => {
 
 const MembersPopover = () => {
 	const members = useSelector((state) => state.board.members);
+	
 	return (
 		<Container>
 			<SearchArea placeholder="Search member..." />
 			<Title>Miembros del tablero</Title>
-			{members.map((member) => (
+			{/* Verificación de seguridad para members */}
+			{members?.map((member) => (
 				<MemberComponent key={member.user} {...member} />
-			))}
+			)) || <div>No hay miembros disponibles</div>}
 		</Container>
 	);
 };
