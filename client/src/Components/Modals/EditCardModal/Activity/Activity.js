@@ -45,6 +45,7 @@ const Activity = () => {
 			document.removeEventListener('click', handleClickOutside, true);
 		};
 	});
+
 	return (
 		<>
 			<Container>
@@ -54,12 +55,12 @@ const Activity = () => {
 						sx={{
 							width: 28,
 							height: 28,
-							bgcolor: user.userInfo.color,
+							bgcolor: user.userInfo?.color || '#1976d2',
 							fontSize: '0.875rem',
 							fontWeight: '800',
 						}}
 					>
-						{user.userInfo.name[0].toUpperCase()}
+						{user.userInfo?.name?.[0]?.toUpperCase() || 'U'}
 					</Avatar>
 				</LeftContainer>
 				<RightContainer>
@@ -83,13 +84,15 @@ const Activity = () => {
 					</CommentWrapper>
 				</RightContainer>
 			</Container>
-			{card.activities.map((activity) => {
+			
+			{/* Corrección principal: Verificación de seguridad para card.activities */}
+			{card.activities?.map((activity) => {
 				if (activity.isComment) {
 					return <Comment key={activity._id} {...activity} />;
 				}
 				return undefined;
 			})}
-
+			
 			{details && <ActivityLog />}
 		</>
 	);
