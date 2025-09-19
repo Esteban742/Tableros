@@ -54,7 +54,7 @@ import {
 } from '../Redux/Slices/listSlice';
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
-const baseUrl = `${API_URL}/card`;
+const baseUrl = `${API_URL}/cards`;
 
 let submitCall = Promise.resolve();
 
