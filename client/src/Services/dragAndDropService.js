@@ -1,11 +1,10 @@
 import api from "./api";
 import { updateCardDragDrop, updateListDragDrop } from '../Redux/Slices/listSlice';
 import { openAlert } from '../Redux/Slices/alertSlice';
-import setBearer from "../Utils/setBearer";
 
-// ✅ CORREGIR LA URL BASE
+// Corregir la URL base
 const API = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
-const baseUrl = `${API}/lists`; // Cambiar de '/list' a '/api/lists'
+const baseUrl = `${API}/lists`;
 
 let submitCall = Promise.resolve();
 
@@ -45,19 +44,18 @@ export const updateCardOrder = async (props, dispatch) => {
 
   await dispatch(updateCardDragDrop(tempList));
 
-  // ✅ CONFIGURAR TOKEN ANTES DE LA PETICIÓN
-  const token = localStorage.getItem("token");
-  if (token) setBearer(token);
-
-  submitCall = submitCall.then(() =>
-    api.post(baseUrl + '/change-card-order', {
+  submitCall = submitCall.then(() => {
+    const token = localStorage.getItem("token");
+    return api.post(baseUrl + '/change-card-order', {
       boardId: props.boardId,
       sourceId: props.sourceId,
       destinationId: props.destinationId,
       destinationIndex: props.destinationIndex,
       cardId: props.cardId,
-    })
-  );
+    }, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+  });
 
   try {
     await submitCall;
@@ -81,18 +79,17 @@ export const updateListOrder = async (props, dispatch) => {
   tempList.splice(props.destinationIndex, 0, list);
   await dispatch(updateListDragDrop(tempList));
 
-  // ✅ CONFIGURAR TOKEN ANTES DE LA PETICIÓN
-  const token = localStorage.getItem("token");
-  if (token) setBearer(token);
-
-  submitCall = submitCall.then(() =>
-    api.post(baseUrl + '/change-list-order', {
+  submitCall = submitCall.then(() => {
+    const token = localStorage.getItem("token");
+    return api.post(baseUrl + '/change-list-order', {
       boardId: props.boardId,
       sourceIndex: props.sourceIndex,
       destinationIndex: props.destinationIndex,
       listId: props.listId,
-    })
-  );
+    }, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+  });
 
   try {
     await submitCall;
