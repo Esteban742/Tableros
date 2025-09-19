@@ -33,28 +33,57 @@ const Attachments = (props) => {
 	const handleDeleteClick = async (attachmentId) => {
 		await attachmentDelete(card.cardId, card.listId, card.boardId, attachmentId, dispatch);		
 	};
+
+	// Función mejorada para abrir archivos
+	const handleAttachmentClick = (attachmentLink, e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		
+		// Abrir en nueva pestaña con configuración específica
+		const newWindow = window.open(attachmentLink, '_blank', 'noopener,noreferrer');
+		
+		// Verificar si la ventana se abrió correctamente
+		if (!newWindow) {
+			// Si el popup fue bloqueado, mostrar la URL directamente
+			alert('Por favor, permite popups para este sitio. URL del archivo: ' + attachmentLink);
+		}
+	};
+
 	return (
 		<>
 			<Container>
 				<AttachmentIcon fontSize='small' />
 				<RightWrapper>
 					<Title>Adjuntos</Title>
-					{card.attachments.map((attachment) => {
-						const validateLink = () => {};
-						validateLink();
+					{card.attachments?.map((attachment) => {
 						return (
-							<Row key={attachment._id} onClick={() => window.open(attachment.link, '_blank')}>
+							<Row key={attachment._id}>
 								<FaviconWrapper>
 									<AttachmentIcon fontSize='large' />
 								</FaviconWrapper>
 								<AttachmentRightWrapper>
 									<AttachmentTitleWrapper>
-										<AttachmentTitle>
-											{attachment.name ? attachment.name : attachment.link}
-										</AttachmentTitle>
-										<AttachmentTitleIconWrapper>
-											<NorthEastRoundedIcon fontSize='inherit' />
-										</AttachmentTitleIconWrapper>
+										{/* Cambiar a un enlace directo */}
+										<a 
+											href={attachment.link}
+											target="_blank"
+											rel="noopener noreferrer"
+											onClick={(e) => handleAttachmentClick(attachment.link, e)}
+											style={{ 
+												textDecoration: 'none', 
+												color: 'inherit',
+												display: 'flex',
+												alignItems: 'center',
+												width: '100%'
+											}}
+										>
+											<AttachmentTitle>
+												{attachment.name ? attachment.name : attachment.link}
+											</AttachmentTitle>
+											<AttachmentTitleIconWrapper>
+												<NorthEastRoundedIcon fontSize='inherit' />
+											</AttachmentTitleIconWrapper>
+										</a>
 									</AttachmentTitleWrapper>
 									<AttachmentFooterWrapper>
 										<AttachmentDate>
