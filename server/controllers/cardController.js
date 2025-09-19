@@ -422,7 +422,7 @@ const uploadAttachment = async (req, res) => {
 		const uploadResult = await cloudinary.uploader.upload(req.file.path, {
 			resource_type: "raw", // Detecta automáticamente el tipo de archivo
 			folder: "tableros-attachments", // Organizar en carpeta
-			public_id: `${cardId}-${Date.now()}`, // ID único para el archivo
+			public_id: `${cardId}-${Date.now()}.pdf`, // ID único para el archivo
 			use_filename: true,
 			unique_filename: false,
 			access_mode: 'public', // IMPORTANTE: Hacer el archivo público
