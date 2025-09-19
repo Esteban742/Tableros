@@ -11,7 +11,7 @@ import { addMembers, setActivityLoading, updateActivity, updateBackground, updat
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 const listRoute = `${API}/list`;
-const boardRoute = `${API}/board`;
+const boardRoute = `${API}/boards`;
 
 export const getLists = async (boardId, dispatch) => {
 	dispatch(setLoading(true));
