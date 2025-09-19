@@ -1,16 +1,53 @@
 const express = require('express');
 const cardController = require('../controllers/cardController');
 const multer = require('multer');
+const path = require('path');
 
-// Configurar multer para subida de archivos
+// Configuración mejorada de multer con diskStorage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    // Conservar la extensión original para evitar corrupción
+    const ext = path.extname(file.originalname);
+    const name = path.basename(file.originalname, ext);
+    const timestamp = Date.now();
+    const random = Math.round(Math.random() * 1E9);
+    
+    // Crear nombre único pero con extensión correcta
+    cb(null, `${name}-${timestamp}-${random}${ext}`);
+  }
+});
+
 const upload = multer({ 
-  dest: 'uploads/',
+  storage: storage,
   limits: { 
-    fileSize: 10 * 1024 * 1024 // 10MB limit
+    fileSize: 50 * 1024 * 1024 // Aumentar a 50MB
   },
   fileFilter: (req, file, cb) => {
-    // Permitir todos los tipos de archivos, pero puedes restringir si necesitas
-    cb(null, true);
+    console.log("📁 Archivo recibido:", {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size
+    });
+    
+    // Permitir tipos de archivo comunes
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/png', 
+      'image/gif',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      console.log("❌ Tipo de archivo no permitido:", file.mimetype);
+      cb(new Error(`Tipo de archivo no permitido: ${file.mimetype}`), false);
+    }
   }
 });
 
@@ -56,7 +93,7 @@ route.post('/:boardId/:listId/:cardId/add-attachment', cardController.addAttachm
 route.delete('/:boardId/:listId/:cardId/:attachmentId/delete-attachment', cardController.deleteAttachment);
 route.put('/:boardId/:listId/:cardId/:attachmentId/update-attachment', cardController.updateAttachment);
 
-// Upload de archivos - IMPORTANTE: Esta ruta debe ir después de las otras para evitar conflictos
+// Upload de archivos con validación mejorada
 route.post('/:boardId/:listId/:cardId/upload-attachment', upload.single('file'), cardController.uploadAttachment);
 
 // Cover
