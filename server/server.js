@@ -61,6 +61,7 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
   console.log("🔄 VERSIÓN ACTUALIZADA - Logs de debug activados");
+  console.log("🆘 PRUEBA DEFINITIVA - Si ves este mensaje, el código se actualizó correctamente");
   console.log("☁️ Archivos se almacenarán en Cloudinary (no localmente)");
   console.log("📁 Directorio temporal uploads/ solo para procesamiento");
 });
