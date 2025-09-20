@@ -166,7 +166,7 @@ const addMember = async (req, res) => {
   }
 
   // Usar el parámetro correcto basado en tu ruta
-  const boardId = req.params.id; // Tu ruta es /:id/add-member
+  const boardId = req.params.id; // Ahora todas las rutas usan /:id
   
   console.log('Board ID extraído:', boardId);
   console.log('User boards:', req.user.boards);
