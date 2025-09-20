@@ -383,32 +383,42 @@ const updateAttachment = async (req, res) => {
 };
 
 const updateCover = async (req, res) => {
-	console.log("🎨 CONTROLLER: updateCover iniciado");
-	// Get params
-	const user = req.user;
-	const { boardId, listId, cardId } = req.params;
-	const {color, isSizeOne} = req.body;
+	try {
+		console.log("🎨 CONTROLLER: updateCover iniciado !!!!");
+		console.log("🎨 CONTROLLER: Params:", req.params);
+		console.log("🎨 CONTROLLER: Body:", req.body);
+		console.log("🎨 CONTROLLER: User:", req.user);
 
-		// Agregar estos logs para depurar
-	console.log("🎨 Update cover request received:");
-	console.log("  - cardId:", cardId);
-	console.log("  - color:", color);
-	console.log("  - isSizeOne:", isSizeOne);
-	console.log("  - Full body:", req.body);
+		// Get params
+		const user = req.user;
+		const { boardId, listId, cardId } = req.params;
+		const { color, isSizeOne } = req.body;
 
-	// Call the card service
-	await cardService.updateCover(
-		cardId,
-		listId,
-		boardId,
-		user,
-		color,
-		isSizeOne,
-		(err, result) => {
-			if (err) return res.status(500).send(err);
-			return res.status(200).send(result);
-		}
-	);
+		console.log("🎨 CONTROLLER: Valores extraídos:", { cardId, listId, boardId, color, isSizeOne });
+
+		// Call the card service
+		await cardService.updateCover(
+			cardId,
+			listId,
+			boardId,
+			user,
+			color,
+			isSizeOne,
+			(err, result) => {
+				console.log("🎨 CONTROLLER: Callback del service ejecutado");
+				if (err) {
+					console.error("❌ CONTROLLER: Error del service:", err);
+					return res.status(500).send(err);
+				}
+				console.log("✅ CONTROLLER: Success del service:", result);
+				return res.status(200).send(result);
+			}
+		);
+	} catch (error) {
+		console.error("❌ CONTROLLER: Error general:", error);
+		console.error("❌ CONTROLLER: Stack trace:", error.stack);
+		return res.status(500).send({ errMessage: 'Error en updateCover controller', details: error.message });
+	}
 };
 
 // Función uploadAttachment con Cloudinary - MODIFICADA PARA ARCHIVOS PÚBLICOS
