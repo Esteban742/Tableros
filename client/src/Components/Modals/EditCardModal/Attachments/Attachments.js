@@ -89,16 +89,17 @@ const Attachments = (props) => {
 		const handlePdfView = () => {
 			console.log("🔍 Intentando abrir PDF:", attachment.link);
 			
-			// Para PDFs, intentar generar una URL que se muestre en navegador
+			// Para PDFs, usar la URL original pero agregar parámetros para visualización
 			let pdfUrl = attachment.link;
 			
-			// Si es una URL de Cloudinary raw, intentar convertirla para visualización
-			if (pdfUrl.includes('/raw/upload/')) {
-				// Cambiar a image/upload con parámetros para mostrar PDF
-				pdfUrl = pdfUrl.replace('/raw/upload/', '/image/upload/fl_attachment:false/');
+			// Si es una URL de Cloudinary, agregar parámetros para mostrar en navegador
+			if (pdfUrl.includes('cloudinary.com')) {
+				// Agregar parámetros para forzar visualización en lugar de descarga
+				const separator = pdfUrl.includes('?') ? '&' : '?';
+				pdfUrl = `${pdfUrl}${separator}dl=0&view=1`;
 			}
 			
-			console.log("🔗 URL optimizada:", pdfUrl);
+			console.log("🔗 URL con parámetros:", pdfUrl);
 			
 			try {
 				const newWindow = window.open(pdfUrl, '_blank');
@@ -110,7 +111,9 @@ const Attachments = (props) => {
 				}
 			} catch (error) {
 				console.error("❌ Error abriendo PDF:", error);
-				window.location.href = pdfUrl;
+				// Si falla, usar la URL original sin modificaciones
+				console.log("🔄 Usando URL original sin modificaciones");
+				window.open(attachment.link, '_blank');
 			}
 		};
 		
