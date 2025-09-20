@@ -807,16 +807,26 @@ const updateCover = async (cardId, listId, boardId, user, color, isSizeOne, call
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to update attachment of this card';
+			return callback({ errMessage: 'You dont have permission to update attachment of this card' });
 		}
+
+		// Logs para depurar
+		console.log("🎨 Before update - Current cover:", card.cover);
+		console.log("🎨 Updating cover with:", { color, isSizeOne });
 
 		//Update date cover color
 		card.cover.color = color;
 		card.cover.isSizeOne = isSizeOne;
 
 		await card.save();
-		return callback(false, { message: 'Success!' });
+		
+		// Verificar después de guardar
+		const updatedCard = await cardModel.findById(cardId);
+		console.log("🎨 After update - New cover:", updatedCard.cover);
+
+		return callback(false, { message: 'Success!', cover: updatedCard.cover });
 	} catch (error) {
+		console.error("❌ Error updating cover:", error);
 		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
