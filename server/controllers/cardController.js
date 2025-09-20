@@ -461,6 +461,8 @@ const uploadAttachment = async (req, res) => {
 			type: 'upload',
 			// Asegurar que no esté bloqueado para delivery
 			invalidate: true,
+			// Esto forzará el formato basado en la extensión del archivo
+			format: fileExtension 
 			// Para PDFs y documentos, asegurar acceso directo
 			flags: resourceType === 'raw' ? 'attachment' : undefined
 		};
