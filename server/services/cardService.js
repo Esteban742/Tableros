@@ -44,23 +44,42 @@ const create = async (title, listId, boardId, user, callback) => {
 
 const deleteById = async (cardId, listId, boardId, user, callback) => {
 	try {
+		console.log("🗑️ Attempting to delete card:", { cardId, listId, boardId });
+		
 		// Get models
 		const card = await cardModel.findById(cardId);
 		const list = await listModel.findById(listId);
 		const board = await boardModel.findById(boardId);
 
+		if (!card) {
+			return callback({ errMessage: 'Card not found' });
+		}
+		if (!list) {
+			return callback({ errMessage: 'List not found' });
+		}
+		if (!board) {
+			return callback({ errMessage: 'Board not found' });
+		}
+
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to update this card';
+			return callback({ errMessage: 'You dont have permission to delete this card' });
 		}
 
 		// Delete the card
 		const result = await cardModel.findByIdAndDelete(cardId);
+		console.log("✅ Card deleted from database:", result._id);
 
-		// Delete the list from lists of board
+		// Delete the card from list's cards array
+		const cardsBefore = list.cards.length;
 		list.cards = list.cards.filter((tempCard) => tempCard.toString() !== cardId);
+		const cardsAfter = list.cards.length;
+		
+		console.log(`📋 List cards updated: ${cardsBefore} -> ${cardsAfter}`);
+		
 		await list.save();
+		console.log("✅ List saved after removing card");
 
 		// Add activity log to board
 		board.activity.unshift({
@@ -70,19 +89,25 @@ const deleteById = async (cardId, listId, boardId, user, callback) => {
 			color: user.color,
 		});
 		await board.save();
+		console.log("✅ Board activity updated");
 
-		return callback(false, { message: 'Success' });
+		return callback(false, { message: 'Success', deletedCard: cardId });
 	} catch (error) {
+		console.error("❌ Error deleting card:", error);
 		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
 const getCard = async (cardId, listId, boardId, user, callback) => {
 	try {
-		// Get models
-		const card = await cardModel.findById(cardId);
+		// Get models - usar lean() para obtener un objeto JavaScript plano
+		const card = await cardModel.findById(cardId).lean();
 		const list = await listModel.findById(listId);
 		const board = await boardModel.findById(boardId);
+
+		if (!card) {
+			return callback({ errMessage: 'Card not found' });
+		}
 
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
@@ -90,18 +115,34 @@ const getCard = async (cardId, listId, boardId, user, callback) => {
 			return callback({ errMessage: 'You dont have permission to view this card' });
 		}
 
-		// Convertir a objeto plano y asegurar que cover esté incluido
-		const cardObject = card.toObject();
-		
-		let returnObject = {
-			...cardObject,
+		// Asegurar que date y cover tengan valores por defecto si no existen
+		if (!card.date) {
+			card.date = {
+				startDate: null,
+				dueDate: null,
+				dueTime: null,
+				reminder: false,
+				completed: false
+			};
+		}
+
+		if (!card.cover) {
+			card.cover = {
+				color: null,
+				isSizeOne: false
+			};
+		}
+
+		// Crear objeto de retorno con TODOS los campos
+		const returnObject = {
+			...card,
 			listTitle: list.title,
 			listId: listId,
 			boardId: boardId
 		};
 
-		// Log para depuración
-		console.log("📋 Getting card - Cover data:", returnObject.cover);
+		console.log("📋 Getting card - Date:", returnObject.date);
+		console.log("📋 Getting card - Cover:", returnObject.cover);
 
 		return callback(false, returnObject);
 	} catch (error) {
@@ -119,12 +160,17 @@ const update = async (cardId, listId, boardId, user, updatedObj, callback) => {
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to update this card';
+			return callback({ errMessage: 'You dont have permission to update this card' });
 		}
 
-		//Update card
-		await card.updateOne(updatedObj);
-		await card.save();
+		// Update card usando findByIdAndUpdate para asegurar que todos los campos se guarden
+		const updatedCard = await cardModel.findByIdAndUpdate(
+			cardId,
+			updatedObj,
+			{ new: true, runValidators: true }
+		);
+
+		console.log("✅ Card updated:", updatedCard);
 
 		return callback(false, { message: 'Success!' });
 	} catch (error) {
@@ -142,7 +188,7 @@ const addComment = async (cardId, listId, boardId, user, body, callback) => {
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to update this card';
+			return callback({ errMessage: 'You dont have permission to update this card' });
 		}
 
 		//Add comment
@@ -181,19 +227,27 @@ const updateComment = async (cardId, listId, boardId, commentId, user, body, cal
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to update this card';
+			return callback({ errMessage: 'You dont have permission to update this card' });
 		}
 
-		//Update card
+		// Check if user owns the comment before updating
+		let commentFound = false;
 		card.activities = card.activities.map((activity) => {
 			if (activity._id.toString() === commentId.toString()) {
 				if (activity.userName !== user.name) {
-					return callback({ errMessage: "You can not edit the comment that you hasn't" });
+					commentFound = true;
+					return activity;
 				}
 				activity.text = body.text;
+				commentFound = true;
 			}
 			return activity;
 		});
+
+		if (!commentFound) {
+			return callback({ errMessage: "Comment not found" });
+		}
+
 		await card.save();
 
 		//Add to board activity
@@ -224,7 +278,7 @@ const deleteComment = async (cardId, listId, boardId, commentId, user, callback)
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to update this card';
+			return callback({ errMessage: 'You dont have permission to update this card' });
 		}
 
 		//Delete card
@@ -257,7 +311,7 @@ const addMember = async (cardId, listId, boardId, user, memberId, callback) => {
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to add member this card';
+			return callback({ errMessage: 'You dont have permission to add member this card' });
 		}
 
 		//Add member
@@ -293,7 +347,7 @@ const deleteMember = async (cardId, listId, boardId, user, memberId, callback) =
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to add member this card';
+			return callback({ errMessage: 'You dont have permission to remove member from this card' });
 		}
 
 		//delete member
@@ -331,14 +385,14 @@ const createLabel = async (cardId, listId, boardId, user, label, callback) => {
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to add label this card';
+			return callback({ errMessage: 'You dont have permission to add label this card' });
 		}
 
 		//Add label
 		card.labels.unshift({
 			text: label.text,
 			color: label.color,
-			backcolor: label.backColor,
+			backColor: label.backColor,
 			selected: true,
 		});
 		await card.save();
@@ -361,7 +415,7 @@ const updateLabel = async (cardId, listId, boardId, labelId, user, label, callba
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to update this card';
+			return callback({ errMessage: 'You dont have permission to update this card' });
 		}
 
 		//Update label
@@ -391,7 +445,7 @@ const deleteLabel = async (cardId, listId, boardId, labelId, user, callback) => 
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to delete this label';
+			return callback({ errMessage: 'You dont have permission to delete this label' });
 		}
 
 		//Delete label
@@ -414,7 +468,7 @@ const updateLabelSelection = async (cardId, listId, boardId, labelId, user, sele
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to update this card';
+			return callback({ errMessage: 'You dont have permission to update this card' });
 		}
 
 		//Update label
@@ -442,7 +496,7 @@ const createChecklist = async (cardId, listId, boardId, user, title, callback) =
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to add Checklist this card';
+			return callback({ errMessage: 'You dont have permission to add Checklist this card' });
 		}
 
 		//Add checklist
@@ -478,9 +532,9 @@ const deleteChecklist = async (cardId, listId, boardId, checklistId, user, callb
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to delete this checklist';
+			return callback({ errMessage: 'You dont have permission to delete this checklist' });
 		}
-		let cl = card.checklists.filter((l) => l._id.toString() === checklistId.toString());
+		let cl = card.checklists.find((l) => l._id.toString() === checklistId.toString());
 		//Delete checklist
 		card.checklists = card.checklists.filter((list) => list._id.toString() !== checklistId.toString());
 		await card.save();
@@ -489,7 +543,7 @@ const deleteChecklist = async (cardId, listId, boardId, checklistId, user, callb
 		board.activity.unshift({
 			user: user._id,
 			name: user.name,
-			action: `removed '${cl.title}' from ${card.title}`,
+			action: `removed '${cl ? cl.title : 'checklist'}' from ${card.title}`,
 			color: user.color,
 		});
 		board.save();
@@ -510,7 +564,7 @@ const addChecklistItem = async (cardId, listId, boardId, user, checklistId, text
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to add item this checklist';
+			return callback({ errMessage: 'You dont have permission to add item this checklist' });
 		}
 
 		//Add checklistItem
@@ -555,7 +609,7 @@ const setChecklistItemCompleted = async (
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to set complete of this checklist item';
+			return callback({ errMessage: 'You dont have permission to set complete of this checklist item' });
 		}
 		let clItem = '';
 		//Update completed of checklistItem
@@ -600,7 +654,7 @@ const setChecklistItemText = async (cardId, listId, boardId, user, checklistId, 
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to set text of this checklist item';
+			return callback({ errMessage: 'You dont have permission to set text of this checklist item' });
 		}
 
 		//Update text of checklistItem
@@ -632,7 +686,7 @@ const deleteChecklistItem = async (cardId, listId, boardId, user, checklistId, c
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to delete this checklist item';
+			return callback({ errMessage: 'You dont have permission to delete this checklist item' });
 		}
 
 		//Delete checklistItem
@@ -659,15 +713,25 @@ const updateStartDueDates = async (cardId, listId, boardId, user, startDate, due
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to update date of this card';
+			return callback({ errMessage: 'You dont have permission to update date of this card' });
 		}
 
-		//Update dates
-		card.date.startDate = startDate;
-		card.date.dueDate = dueDate;
-		card.date.dueTime = dueTime;
-		if (dueDate === null) card.date.completed = false;
-		await card.save();
+		// Usar findByIdAndUpdate para asegurar que se guarde correctamente
+		const updatedCard = await cardModel.findByIdAndUpdate(
+			cardId,
+			{
+				$set: {
+					'date.startDate': startDate,
+					'date.dueDate': dueDate,
+					'date.dueTime': dueTime,
+					'date.completed': dueDate === null ? false : card.date.completed
+				}
+			},
+			{ new: true }
+		);
+
+		console.log("📅 Date updated successfully:", updatedCard.date);
+
 		return callback(false, { message: 'Success!' });
 	} catch (error) {
 		return callback({ errMessage: 'Something went wrong', details: error.message });
@@ -684,7 +748,7 @@ const updateDateCompleted = async (cardId, listId, boardId, user, completed, cal
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to update date of this card';
+			return callback({ errMessage: 'You dont have permission to update date of this card' });
 		}
 
 		//Update date completed event
@@ -717,7 +781,7 @@ const addAttachment = async (cardId, listId, boardId, user, link, name, callback
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to update date of this card';
+			return callback({ errMessage: 'You dont have permission to add attachment to this card' });
 		}
 
 		//Add attachment
@@ -751,14 +815,14 @@ const deleteAttachment = async (cardId, listId, boardId, user, attachmentId, cal
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to delete this attachment';
+			return callback({ errMessage: 'You dont have permission to delete this attachment' });
 		}
 
 		let attachmentObj = card.attachments.filter(
 			(attachment) => attachment._id.toString() === attachmentId.toString()
 		);
 
-		//Delete checklistItem
+		//Delete attachment
 		card.attachments = card.attachments.filter(
 			(attachment) => attachment._id.toString() !== attachmentId.toString()
 		);
@@ -789,10 +853,10 @@ const updateAttachment = async (cardId, listId, boardId, user, attachmentId, lin
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to update attachment of this card';
+			return callback({ errMessage: 'You dont have permission to update attachment of this card' });
 		}
 
-		//Update date completed event
+		//Update attachment
 		card.attachments = card.attachments.map((attachment) => {
 			if (attachment._id.toString() === attachmentId.toString()) {
 				attachment.link = link;
@@ -818,22 +882,22 @@ const updateCover = async (cardId, listId, boardId, user, color, isSizeOne, call
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			return callback({ errMessage: 'You dont have permission to update attachment of this card' });
+			return callback({ errMessage: 'You dont have permission to update cover of this card' });
 		}
 
-		// Logs para depurar
-		console.log("🎨 Before update - Current cover:", card.cover);
-		console.log("🎨 Updating cover with:", { color, isSizeOne });
+		// Usar findByIdAndUpdate para asegurar que se guarde correctamente
+		const updatedCard = await cardModel.findByIdAndUpdate(
+			cardId,
+			{ 
+				$set: { 
+					'cover.color': color,
+					'cover.isSizeOne': isSizeOne 
+				} 
+			},
+			{ new: true }
+		);
 
-		//Update date cover color
-		card.cover.color = color;
-		card.cover.isSizeOne = isSizeOne;
-
-		await card.save();
-		
-		// Verificar después de guardar
-		const updatedCard = await cardModel.findById(cardId);
-		console.log("🎨 After update - New cover:", updatedCard.cover);
+		console.log("🎨 Cover updated successfully:", updatedCard.cover);
 
 		return callback(false, { message: 'Success!', cover: updatedCard.cover });
 	} catch (error) {
