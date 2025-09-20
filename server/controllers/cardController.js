@@ -436,20 +436,63 @@ const uploadAttachment = async (req, res) => {
 			return res.status(400).send({ errMessage: 'No file uploaded' });
 		}
 
-		// Subir archivo a Cloudinary con acceso público
-		const uploadResult = await cloudinary.uploader.upload(req.file.path, {
-			resource_type: "raw", // Detecta automáticamente el tipo de archivo
-			folder: "tableros-attachments", // Organizar en carpeta
-			public_id: `${cardId}-${Date.now()}`, // ID único para el archivo
+		// Detectar tipo de archivo para usar el resource_type correcto
+		const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
+		const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
+		const videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'];
+		
+		let resourceType = 'raw'; // Por defecto para documentos
+		let deliveryType = 'upload';
+		let flags = [];
+
+		if (imageExtensions.includes(fileExtension)) {
+			resourceType = 'image';
+		} else if (videoExtensions.includes(fileExtension)) {
+			resourceType = 'video';
+		} else {
+			// Para documentos (PDF, DOC, etc.) que queremos mostrar en navegador
+			resourceType = 'image'; // Usar 'image' para poder aplicar transformaciones
+			flags.push('attachment:false'); // Evitar descarga forzada
+		}
+
+		// Configuración de subida optimizada
+		const uploadOptions = {
+			resource_type: resourceType,
+			folder: "tableros-attachments",
+			public_id: `${cardId}-${Date.now()}`,
 			use_filename: true,
 			unique_filename: false,
-			access_mode: 'public', // IMPORTANTE: Hacer el archivo público
-			type: 'upload' // Tipo de almacenamiento
-		});
+			access_mode: 'public',
+			type: deliveryType
+		};
+
+		// Solo agregar flags si no está vacío
+		if (flags.length > 0) {
+			uploadOptions.flags = flags.join(',');
+		}
+
+		// Subir archivo a Cloudinary
+		const uploadResult = await cloudinary.uploader.upload(req.file.path, uploadOptions);
 
 		console.log("☁️ Archivo subido a Cloudinary:", uploadResult.secure_url);
+		console.log("🔗 Resource type usado:", resourceType);
+		console.log("🏷️ Flags aplicadas:", flags);
 
-		const linkUrl = uploadResult.secure_url;
+		// Generar URL optimizada para visualización
+		let optimizedUrl = uploadResult.secure_url;
+		
+		// Para documentos, usar URL de imagen con transformación para mostrar en navegador
+		if (!imageExtensions.includes(fileExtension) && !videoExtensions.includes(fileExtension)) {
+			// Construir URL que no fuerce descarga
+			optimizedUrl = cloudinary.url(uploadResult.public_id, {
+				resource_type: 'image',
+				flags: 'attachment:false',
+				fetch_format: 'auto',
+				quality: 'auto'
+			});
+		}
+
+		const linkUrl = optimizedUrl;
 		const name = req.body?.name || req.file.originalname;
 
 		// Eliminar archivo temporal del servidor
@@ -477,7 +520,9 @@ const uploadAttachment = async (req, res) => {
 					attachmentId: result._id || result.attachmentId,
 					link: linkUrl, 
 					name,
-					publicId: uploadResult.public_id // Para poder eliminar después si es necesario
+					publicId: uploadResult.public_id,
+					resourceType: resourceType,
+					originalUrl: uploadResult.secure_url // URL original por si acaso
 				});
 			}
 		);
@@ -497,6 +542,7 @@ const uploadAttachment = async (req, res) => {
 		});
 	}
 };
+
 
 module.exports = {
 	create,
