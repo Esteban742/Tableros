@@ -829,6 +829,8 @@ const updateCover = async (cardId, listId, boardId, user, color, isSizeOne, call
 		card.cover.color = color;
 		card.cover.isSizeOne = isSizeOne;
 
+		card.markModified("cover");
+
         await card.save();
 		
 		// Verificar después de guardar
