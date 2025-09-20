@@ -383,6 +383,7 @@ const updateAttachment = async (req, res) => {
 };
 
 const updateCover = async (req, res) => {
+	console.log("🎨 CONTROLLER: updateCover iniciado");
 	// Get params
 	const user = req.user;
 	const { boardId, listId, cardId } = req.params;
