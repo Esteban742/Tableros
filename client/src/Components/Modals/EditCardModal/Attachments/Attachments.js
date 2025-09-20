@@ -87,8 +87,21 @@ const Attachments = (props) => {
 		
 		// Para PDFs, intentar diferentes métodos
 		const handlePdfView = () => {
+			console.log("🔍 Intentando abrir PDF:", attachment.link);
 			// Abrir con el visor nativo del navegador
-			window.open(attachment.link, '_blank');
+			try {
+				const newWindow = window.open(attachment.link, '_blank');
+				if (!newWindow) {
+					console.log("❌ Popup bloqueado, intentando navegación directa");
+					window.location.href = attachment.link;
+				} else {
+					console.log("✅ PDF abierto en nueva ventana");
+				}
+			} catch (error) {
+				console.error("❌ Error abriendo PDF:", error);
+				// Fallback: abrir en la misma pestaña
+				window.location.href = attachment.link;
+			}
 		};
 		
 		return (
@@ -164,7 +177,7 @@ const Attachments = (props) => {
 								para una experiencia de visualización completa.
 							</p>
 							<Box display="flex" gap={2}>
-								<Button
+								<button
 									onClick={handlePdfView}
 									style={{ 
 										backgroundColor: '#dc3545', 
@@ -178,8 +191,8 @@ const Attachments = (props) => {
 									}}
 								>
 									📖 Ver PDF
-								</Button>
-								<Button
+								</button>
+								<button
 									onClick={() => {
 										// Crear un enlace de descarga
 										const a = document.createElement('a');
@@ -199,7 +212,7 @@ const Attachments = (props) => {
 									}}
 								>
 									💾 Descargar
-								</Button>
+								</button>
 							</Box>
 						</Box>
 					)}
@@ -246,8 +259,11 @@ const Attachments = (props) => {
 								Este tipo de archivo no se puede mostrar en vista previa.<br/>
 								Haz clic en "Abrir en nueva pestaña" para ver el archivo completo.
 							</p>
-							<Button
-								onClick={() => window.open(attachment.link, '_blank')}
+							<button
+								onClick={() => {
+									console.log("🔍 Abriendo archivo en nueva pestaña:", attachment.link);
+									window.open(attachment.link, '_blank');
+								}}
 								style={{ 
 									backgroundColor: '#0079bf', 
 									color: 'white',
@@ -258,7 +274,7 @@ const Attachments = (props) => {
 								}}
 							>
 								Abrir en nueva pestaña
-							</Button>
+							</button>
 						</Box>
 					)}
 				</DialogContent>
