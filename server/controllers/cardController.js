@@ -387,7 +387,13 @@ const updateCover = async (req, res) => {
 	const user = req.user;
 	const { boardId, listId, cardId } = req.params;
 	const {color, isSizeOne} = req.body;
-	
+
+		// Agregar estos logs para depurar
+	console.log("🎨 Update cover request received:");
+	console.log("  - cardId:", cardId);
+	console.log("  - color:", color);
+	console.log("  - isSizeOne:", isSizeOne);
+	console.log("  - Full body:", req.body);
 
 	// Call the card service
 	await cardService.updateCover(
