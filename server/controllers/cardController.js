@@ -2,6 +2,11 @@ const cardService = require('../services/cardService');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 
+
+// ✅ VERIFICAR QUE EL SERVICE SE IMPORTÓ CORRECTAMENTE
+console.log("🔍 CONTROLLER: cardService importado:", typeof cardService.updateCover);
+
+
 // Configurar Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -383,21 +388,18 @@ const updateAttachment = async (req, res) => {
 };
 
 const updateCover = async (req, res) => {
+	console.log("🎨 CONTROLLER: updateCover iniciado !!!!");
+	
 	try {
-		console.log("🎨 CONTROLLER: updateCover iniciado !!!!");
-		console.log("🎨 CONTROLLER: Params:", req.params);
-		console.log("🎨 CONTROLLER: Body:", req.body);
-		console.log("🎨 CONTROLLER: User:", req.user);
-
-		// Get params
 		const user = req.user;
 		const { boardId, listId, cardId } = req.params;
 		const { color, isSizeOne } = req.body;
 
-		console.log("🎨 CONTROLLER: Valores extraídos:", { cardId, listId, boardId, color, isSizeOne });
+		console.log("🎨 CONTROLLER: Datos:", { cardId, color, isSizeOne });
+		console.log("🎨 CONTROLLER: Llamando al service...");
 
-		// Call the card service
-		await cardService.updateCover(
+		// Llamada más simple sin await en el callback
+		cardService.updateCover(
 			cardId,
 			listId,
 			boardId,
@@ -405,19 +407,18 @@ const updateCover = async (req, res) => {
 			color,
 			isSizeOne,
 			(err, result) => {
-				console.log("🎨 CONTROLLER: Callback del service ejecutado");
+				console.log("🎨 CONTROLLER: Callback ejecutado");
 				if (err) {
-					console.error("❌ CONTROLLER: Error del service:", err);
+					console.error("❌ CONTROLLER: Error:", err);
 					return res.status(500).send(err);
 				}
-				console.log("✅ CONTROLLER: Success del service:", result);
+				console.log("✅ CONTROLLER: Success:", result);
 				return res.status(200).send(result);
 			}
 		);
 	} catch (error) {
-		console.error("❌ CONTROLLER: Error general:", error);
-		console.error("❌ CONTROLLER: Stack trace:", error.stack);
-		return res.status(500).send({ errMessage: 'Error en updateCover controller', details: error.message });
+		console.error("❌ CONTROLLER: Error catch:", error);
+		return res.status(500).send({ errMessage: error.message });
 	}
 };
 
