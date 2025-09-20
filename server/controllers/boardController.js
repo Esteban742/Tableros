@@ -208,26 +208,55 @@ const addMember = async (req, res) => {
   }
 };
 
+
 // =================== Eliminar miembro ===================
 const removeMember = async (req, res) => {
-  if (!req.user || !req.user.boards) {
+  console.log('=== DEBUG REMOVE MEMBER START ===');
+  console.log('req.params:', req.params);
+  console.log('req.body:', req.body);
+  console.log('req.user:', req.user);
+  
+  if (!req.user || !req.user.id) {
+    console.log('❌ Usuario no autenticado');
     return res.status(401).json({ errMessage: "Usuario no autenticado" });
   }
 
-  const isMember = req.user.boards.includes(req.params.id);
+  // ✅ CORREGIDO: usar req.params.id consistentemente (igual que addMember)
+  const boardId = req.params.id;
+  
+  console.log('Board ID extraído:', boardId);
+  console.log('User boards:', req.user.boards);
+  
+  // Verificar si el usuario es miembro del board (convertir a string para comparación)
+  const userBoardsAsStrings = req.user.boards?.map(b => b.toString()) || [];
+  const isMember = userBoardsAsStrings.includes(boardId.toString());
+  console.log('User boards as strings:', userBoardsAsStrings);
+  console.log('¿Es miembro?', isMember);
+  
   if (!isMember) {
+    console.log('❌ Usuario no es miembro del board');
     return res.status(403).json({ errMessage: "No puedes eliminar miembros de este board" });
   }
 
-  const { boardId } = req.params;
   const identifier = req.body; // { email } o { memberId }
+  console.log('Identificador para eliminar:', identifier);
+
+  if (!identifier || (Object.keys(identifier).length === 0)) {
+    console.log('❌ No se proporcionó identificador para eliminar');
+    return res.status(400).json({ errMessage: "Debe proporcionar email o memberId para eliminar" });
+  }
 
   try {
     await boardService.removeMember(boardId, identifier, req.user, (err, result) => {
-      if (err) return res.status(400).send(err);
+      if (err) {
+        console.log('❌ Error en boardService.removeMember:', err);
+        return res.status(400).send(err);
+      }
+      console.log('✅ Miembro eliminado exitosamente:', result);
       return res.status(200).send(result);
     });
   } catch (err) {
+    console.log('❌ Error catch en removeMember:', err);
     return res.status(500).json({ errMessage: "Error al eliminar miembro" });
   }
 };
