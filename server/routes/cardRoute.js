@@ -81,7 +81,17 @@ route.put('/:boardId/:listId/:cardId/:attachmentId/update-attachment', cardContr
 // Upload de archivos - Ahora usando Cloudinary
 route.post('/:boardId/:listId/:cardId/upload-attachment', upload.single('file'), cardController.uploadAttachment);
 
-// Cover
-route.put('/:boardId/:listId/:cardId/update-cover', cardController.updateCover);
+// Cover - Con manejo de errores
+route.put('/:boardId/:listId/:cardId/update-cover', async (req, res, next) => {
+    try {
+        console.log("🎨 RUTA: update-cover recibida");
+        console.log("🎨 RUTA: Params:", req.params);
+        console.log("🎨 RUTA: Body:", req.body);
+        await cardController.updateCover(req, res);
+    } catch (error) {
+        console.error("❌ ERROR en ruta update-cover:", error);
+        next(error);
+    }
+});
 
 module.exports = route;
