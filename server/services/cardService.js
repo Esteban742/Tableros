@@ -826,8 +826,8 @@ const updateCover = async (cardId, listId, boardId, user, color, isSizeOne, call
 		console.log("🎨 Updating cover with:", { color, isSizeOne });
 
 		//Update date cover color
-        card.cover.color = color ?? '';
-        card.cover.isSizeOne = (isSizeOne !== null && isSizeOne !== undefined) ? isSizeOne : false;
+		card.cover.color = color;
+		card.cover.isSizeOne = isSizeOne;
 
         await card.save();
 		
