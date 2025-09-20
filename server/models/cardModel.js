@@ -110,11 +110,11 @@ const cardSchema = mongoose.Schema({
 	cover: {
 		color: {
 			type: String,
-			default: null,
+			default: ''
 		},
 		isSizeOne: {
 			type: Boolean,
-			default: null,
+			default: false
 		},
 	},
 	checklists: [
