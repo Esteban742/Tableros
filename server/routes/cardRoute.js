@@ -97,6 +97,17 @@ route.put('/:boardId/:listId/:cardId/update-cover', async (req, res, next) => {
 });
 
 // IMPORTANTE: La ruta genérica DEBE ir al final
-route.put('/:boardId/:listId/:cardId', cardController.update);
+route.put('/:boardId/:listId/:cardId', (req, res, next) => {
+    console.log("⚠️ RUTA GENÉRICA INTERCEPTADA:", req.url);
+    console.log("⚠️ PARAMS:", req.params);
+    
+    // Si la URL contiene 'update-cover', significa que hay un problema de orden
+    if (req.url.includes('update-cover')) {
+        console.log("❌ ERROR: La ruta genérica está interceptando update-cover!");
+        console.log("❌ Esto significa que las rutas específicas no están funcionando");
+    }
+    
+    cardController.update(req, res);
+});
 
 module.exports = route;
