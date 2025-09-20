@@ -87,10 +87,21 @@ const getCard = async (cardId, listId, boardId, user, callback) => {
 		// Validate owner
 		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
 		if (!validate) {
-			errMessage: 'You dont have permission to update this card';
+			return callback({ errMessage: 'You dont have permission to view this card' });
 		}
 
-		let returnObject = { ...card._doc, listTitle: list.title, listId: listId, boardId: boardId };
+		// Convertir a objeto plano y asegurar que cover esté incluido
+		const cardObject = card.toObject();
+		
+		let returnObject = {
+			...cardObject,
+			listTitle: list.title,
+			listId: listId,
+			boardId: boardId
+		};
+
+		// Log para depuración
+		console.log("📋 Getting card - Cover data:", returnObject.cover);
 
 		return callback(false, returnObject);
 	} catch (error) {
