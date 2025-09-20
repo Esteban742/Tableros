@@ -71,10 +71,12 @@ const Attachments = (props) => {
 		const extension = filename.split('.').pop().toLowerCase();
 		const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
 		const videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'];
-		const documentExtensions = ['pdf', 'doc', 'docx', 'txt'];
+		const pdfExtensions = ['pdf'];
+		const documentExtensions = ['doc', 'docx', 'txt', 'rtf'];
 		
 		if (imageExtensions.includes(extension)) return 'image';
 		if (videoExtensions.includes(extension)) return 'video';
+		if (pdfExtensions.includes(extension)) return 'pdf';
 		if (documentExtensions.includes(extension)) return 'document';
 		return 'other';
 	};
@@ -83,11 +85,12 @@ const Attachments = (props) => {
 	const PreviewModal = ({ attachment, onClose }) => {
 		const fileType = getFileType(attachment.name || attachment.link);
 		const [loadError, setLoadError] = useState(false);
+		const [showPdfViewer, setShowPdfViewer] = useState(false);
 		
-		// Para PDFs, usar el visor de PDF del navegador
-		const getPdfUrl = (url) => {
-			// Agregar parámetros para mejor visualización
-			return `${url}#view=FitH&toolbar=1&navpanes=1`;
+		// Para PDFs, intentar diferentes métodos
+		const handlePdfView = () => {
+			// Intentar abrir con el visor nativo del navegador
+			window.open(attachment.link, '_blank');
 		};
 		
 		return (
@@ -144,20 +147,76 @@ const Attachments = (props) => {
 							Tu navegador no soporta videos.
 						</video>
 					)}
+					
+					{/* Para PDFs - mostrar siempre el mensaje informativo */}
+					{fileType === 'pdf' && (
+						<Box 
+							display="flex" 
+							flexDirection="column" 
+							alignItems="center" 
+							justifyContent="center" 
+							height="100%" 
+							gap={3}
+							style={{ backgroundColor: '#f8f9fa', padding: '2rem' }}
+						>
+							<div style={{ fontSize: '4rem' }}>📄</div>
+							<h3 style={{ margin: '0', color: '#333' }}>Documento PDF</h3>
+							<p style={{ textAlign: 'center', color: '#6c757d', margin: '1rem 0' }}>
+								Los archivos PDF se abren mejor en una nueva pestaña<br/>
+								para una experiencia de visualización completa.
+							</p>
+							<Box display="flex" gap={2}>
+								<Button
+									onClick={handlePdfView}
+									style={{ 
+										backgroundColor: '#dc3545', 
+										color: 'white',
+										padding: '12px 24px',
+										border: 'none',
+										borderRadius: '6px',
+										cursor: 'pointer',
+										fontSize: '14px',
+										fontWeight: '600'
+									}}
+								>
+									📖 Ver PDF
+								</Button>
+								<Button
+									onClick={() => {
+										// Crear un enlace de descarga
+										const a = document.createElement('a');
+										a.href = attachment.link;
+										a.download = attachment.name || 'documento.pdf';
+										a.click();
+									}}
+									style={{ 
+										backgroundColor: '#28a745', 
+										color: 'white',
+										padding: '12px 24px',
+										border: 'none',
+										borderRadius: '6px',
+										cursor: 'pointer',
+										fontSize: '14px',
+										fontWeight: '600'
+									}}
+								>
+									💾 Descargar
+								</Button>
+							</Box>
+						</Box>
+					)}
+					
 					{fileType === 'document' && !loadError && (
-						<>
-							{/* Intentar iframe primero */}
-							<iframe 
-								src={getPdfUrl(attachment.link)}
-								style={{ 
-									width: '100%', 
-									height: '100%',
-									border: 'none'
-								}}
-								title={attachment.name}
-								onError={() => setLoadError(true)}
-							/>
-						</>
+						<iframe 
+							src={attachment.link}
+							style={{ 
+								width: '100%', 
+								height: '100%',
+								border: 'none'
+							}}
+							title={attachment.name}
+							onError={() => setLoadError(true)}
+						/>
 					)}
 					{fileType === 'other' && !loadError && (
 						<iframe 
@@ -172,8 +231,8 @@ const Attachments = (props) => {
 						/>
 					)}
 					
-					{/* Fallback cuando hay error o no se puede mostrar */}
-					{(loadError || fileType === 'document') && (
+					{/* Fallback para otros errores */}
+					{loadError && fileType !== 'pdf' && (
 						<Box 
 							display="flex" 
 							flexDirection="column" 
