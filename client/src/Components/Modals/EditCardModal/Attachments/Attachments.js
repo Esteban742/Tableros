@@ -172,62 +172,95 @@ const Attachments = (props) => {
 						</video>
 					)}
 					
-					{/* Para PDFs - mostrar siempre la interfaz optimizada */}
+					{/* Para PDFs - intentar mostrar directamente en iframe */}
 					{fileType === 'pdf' && (
-						<Box 
-							display="flex" 
-							flexDirection="column" 
-							alignItems="center" 
-							justifyContent="center" 
-							height="100%" 
-							gap={3}
-							style={{ backgroundColor: '#f8f9fa', padding: '2rem' }}
-						>
-							<div style={{ fontSize: '4rem' }}>📄</div>
-							<h3 style={{ margin: '0', color: '#333' }}>Documento PDF</h3>
-							<p style={{ textAlign: 'center', color: '#6c757d', margin: '1rem 0' }}>
-								Los archivos PDF se abren mejor en una nueva pestaña<br/>
-								para una experiencia de visualización completa.
-							</p>
-							<Box display="flex" gap={2}>
+						<div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+							{/* Intentar mostrar PDF en iframe */}
+							<iframe 
+								src={attachment.link}
+								style={{ 
+									width: '100%', 
+									height: '100%',
+									border: 'none'
+								}}
+								title={attachment.name}
+								onError={() => {
+									console.log("No se pudo cargar PDF en iframe");
+									setLoadError(true);
+								}}
+								onLoad={() => {
+									console.log("PDF cargado exitosamente en iframe");
+								}}
+							/>
+							
+							{/* Botón para abrir en nueva pestaña si necesitas mejor vista */}
+							<Box 
+								position="absolute" 
+								top={10} 
+								right={60} 
+								style={{ 
+									backgroundColor: 'rgba(0,0,0,0.7)', 
+									padding: '8px',
+									borderRadius: '6px'
+								}}
+							>
 								<button
 									onClick={handlePdfView}
+									title="Abrir en nueva pestaña para mejor visualización"
 									style={{ 
-										backgroundColor: '#dc3545', 
+										backgroundColor: '#0079bf', 
 										color: 'white',
-										padding: '12px 24px',
+										padding: '8px 12px',
 										border: 'none',
-										borderRadius: '6px',
+										borderRadius: '4px',
 										cursor: 'pointer',
-										fontSize: '14px',
+										fontSize: '12px',
 										fontWeight: '600'
 									}}
 								>
-									📖 Ver PDF
-								</button>
-								<button
-									onClick={() => {
-										// Crear un enlace de descarga
-										const a = document.createElement('a');
-										a.href = attachment.link;
-										a.download = attachment.name || 'documento.pdf';
-										a.click();
-									}}
-									style={{ 
-										backgroundColor: '#28a745', 
-										color: 'white',
-										padding: '12px 24px',
-										border: 'none',
-										borderRadius: '6px',
-										cursor: 'pointer',
-										fontSize: '14px',
-										fontWeight: '600'
-									}}
-								>
-									💾 Descargar
+									📖 Ampliar
 								</button>
 							</Box>
-						</Box>
+							
+							{/* Si falla el iframe, mostrar la interfaz alternativa */}
+							{loadError && (
+								<Box 
+									position="absolute"
+									top={0}
+									left={0}
+									width="100%"
+									height="100%"
+									display="flex" 
+									flexDirection="column" 
+									alignItems="center" 
+									justifyContent="center" 
+									gap={3}
+									style={{ backgroundColor: '#f8f9fa', padding: '2rem' }}
+								>
+									<div style={{ fontSize: '4rem' }}>📄</div>
+									<h3 style={{ margin: '0', color: '#333' }}>Vista previa no disponible</h3>
+									<p style={{ textAlign: 'center', color: '#6c757d', margin: '1rem 0' }}>
+										Este PDF no se puede mostrar directamente en el modal.<br/>
+										Puedes abrirlo en una nueva pestaña para visualizarlo.
+									</p>
+									<button
+										onClick={handlePdfView}
+										style={{ 
+											backgroundColor: '#0079bf', 
+											color: 'white',
+											padding: '12px 24px',
+											border: 'none',
+											borderRadius: '6px',
+											cursor: 'pointer',
+											fontSize: '14px',
+											fontWeight: '600'
+										}}
+									>
+										📖 Ver PDF
+									</button>
+								</Box>
+							)}
+						</div>
 					)}
 					
 					{fileType === 'document' && !loadError && (
