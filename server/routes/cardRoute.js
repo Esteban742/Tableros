@@ -2,6 +2,8 @@ const express = require('express');
 const cardController = require('../controllers/cardController');
 const multer = require('multer');
 
+console.log("🚀 CARGANDO cardRoute.js - Archivo actualizado");
+
 // Configuración simplificada de multer para archivos temporales (antes de subir a Cloudinary)
 const upload = multer({ 
   dest: 'uploads/', // Directorio temporal
@@ -43,7 +45,6 @@ route.post('/create', cardController.create);
 route.delete('/:boardId/:listId/:cardId', cardController.deleteById);
 route.get('/:boardId/:listId/:cardId', cardController.getCard);
 
-
 // Comentarios
 route.post('/:boardId/:listId/:cardId/add-comment', cardController.addComment);
 route.put('/:boardId/:listId/:cardId/:commentId', cardController.updateComment);
@@ -81,6 +82,7 @@ route.put('/:boardId/:listId/:cardId/:attachmentId/update-attachment', cardContr
 // Upload de archivos - Ahora usando Cloudinary
 route.post('/:boardId/:listId/:cardId/upload-attachment', upload.single('file'), cardController.uploadAttachment);
 
+console.log("🚀 CONFIGURANDO ruta update-cover");
 // Cover - Con manejo de errores
 route.put('/:boardId/:listId/:cardId/update-cover', async (req, res, next) => {
     try {
@@ -94,6 +96,7 @@ route.put('/:boardId/:listId/:cardId/update-cover', async (req, res, next) => {
     }
 });
 
+// IMPORTANTE: La ruta genérica DEBE ir al final
 route.put('/:boardId/:listId/:cardId', cardController.update);
 
 module.exports = route;
