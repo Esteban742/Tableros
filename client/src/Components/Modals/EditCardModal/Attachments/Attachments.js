@@ -88,19 +88,29 @@ const Attachments = (props) => {
 		// Para PDFs, intentar diferentes métodos
 		const handlePdfView = () => {
 			console.log("🔍 Intentando abrir PDF:", attachment.link);
-			// Abrir con el visor nativo del navegador
+			
+			// Para PDFs, intentar generar una URL que se muestre en navegador
+			let pdfUrl = attachment.link;
+			
+			// Si es una URL de Cloudinary raw, intentar convertirla para visualización
+			if (pdfUrl.includes('/raw/upload/')) {
+				// Cambiar a image/upload con parámetros para mostrar PDF
+				pdfUrl = pdfUrl.replace('/raw/upload/', '/image/upload/fl_attachment:false/');
+			}
+			
+			console.log("🔗 URL optimizada:", pdfUrl);
+			
 			try {
-				const newWindow = window.open(attachment.link, '_blank');
+				const newWindow = window.open(pdfUrl, '_blank');
 				if (!newWindow) {
 					console.log("❌ Popup bloqueado, intentando navegación directa");
-					window.location.href = attachment.link;
+					window.location.href = pdfUrl;
 				} else {
 					console.log("✅ PDF abierto en nueva ventana");
 				}
 			} catch (error) {
 				console.error("❌ Error abriendo PDF:", error);
-				// Fallback: abrir en la misma pestaña
-				window.location.href = attachment.link;
+				window.location.href = pdfUrl;
 			}
 		};
 		
