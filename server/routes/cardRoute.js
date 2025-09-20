@@ -40,50 +40,31 @@ const upload = multer({
 
 const route = express.Router();
 
-// Rutas de cards
+// ✅ RUTAS BÁSICAS SIN CONFLICTOS
 route.post('/create', cardController.create);
 route.delete('/:boardId/:listId/:cardId', cardController.deleteById);
 route.get('/:boardId/:listId/:cardId', cardController.getCard);
 
-// Comentarios
+// ✅ RUTAS POST (sin conflictos)
 route.post('/:boardId/:listId/:cardId/add-comment', cardController.addComment);
-route.put('/:boardId/:listId/:cardId/:commentId', cardController.updateComment);
-route.delete('/:boardId/:listId/:cardId/:commentId', cardController.deleteComment);
-
-// Miembros
 route.post('/:boardId/:listId/:cardId/add-member', cardController.addMember);
-route.delete('/:boardId/:listId/:cardId/:memberId/delete-member', cardController.deleteMember);
-
-// Labels
 route.post('/:boardId/:listId/:cardId/create-label', cardController.createLabel);
-route.put('/:boardId/:listId/:cardId/:labelId/update-label', cardController.updateLabel);
-route.delete('/:boardId/:listId/:cardId/:labelId/delete-label', cardController.deleteLabel);
-route.put('/:boardId/:listId/:cardId/:labelId/update-label-selection', cardController.updateLabelSelection);
-
-// Checklists
 route.post('/:boardId/:listId/:cardId/create-checklist', cardController.createChecklist);
-route.delete('/:boardId/:listId/:cardId/:checklistId/delete-checklist', cardController.deleteChecklist);
-
-// Checklist Items
 route.post('/:boardId/:listId/:cardId/:checklistId/add-checklist-item', cardController.addChecklistItem);
-route.put('/:boardId/:listId/:cardId/:checklistId/:checklistItemId/set-checklist-item-completed', cardController.setChecklistItemCompleted);
-route.put('/:boardId/:listId/:cardId/:checklistId/:checklistItemId/set-checklist-item-text', cardController.setChecklistItemText);
-route.delete('/:boardId/:listId/:cardId/:checklistId/:checklistItemId/delete-checklist-item', cardController.deleteChecklistItem);
-
-// Fechas
-route.put('/:boardId/:listId/:cardId/update-dates', cardController.updateStartDueDates);
-route.put('/:boardId/:listId/:cardId/update-date-completed', cardController.updateDateCompleted);
-
-// Attachments
 route.post('/:boardId/:listId/:cardId/add-attachment', cardController.addAttachment);
-route.delete('/:boardId/:listId/:cardId/:attachmentId/delete-attachment', cardController.deleteAttachment);
-route.put('/:boardId/:listId/:cardId/:attachmentId/update-attachment', cardController.updateAttachment);
-
-// Upload de archivos - Ahora usando Cloudinary
 route.post('/:boardId/:listId/:cardId/upload-attachment', upload.single('file'), cardController.uploadAttachment);
 
+// ✅ RUTAS DELETE (sin conflictos)
+route.delete('/:boardId/:listId/:cardId/:commentId', cardController.deleteComment);
+route.delete('/:boardId/:listId/:cardId/:memberId/delete-member', cardController.deleteMember);
+route.delete('/:boardId/:listId/:cardId/:labelId/delete-label', cardController.deleteLabel);
+route.delete('/:boardId/:listId/:cardId/:checklistId/delete-checklist', cardController.deleteChecklist);
+route.delete('/:boardId/:listId/:cardId/:checklistId/:checklistItemId/delete-checklist-item', cardController.deleteChecklistItem);
+route.delete('/:boardId/:listId/:cardId/:attachmentId/delete-attachment', cardController.deleteAttachment);
+
+// ✅ RUTAS PUT ESPECÍFICAS PRIMERO (ORDEN CRÍTICO)
+// Cover - LA MÁS IMPORTANTE
 console.log("🚀 CONFIGURANDO ruta update-cover");
-// Cover - Con manejo de errores
 route.put('/:boardId/:listId/:cardId/update-cover', async (req, res, next) => {
     try {
         console.log("🎨 RUTA: update-cover recibida");
@@ -96,7 +77,25 @@ route.put('/:boardId/:listId/:cardId/update-cover', async (req, res, next) => {
     }
 });
 
-// IMPORTANTE: La ruta genérica DEBE ir al final
+// Fechas
+route.put('/:boardId/:listId/:cardId/update-dates', cardController.updateStartDueDates);
+route.put('/:boardId/:listId/:cardId/update-date-completed', cardController.updateDateCompleted);
+
+// Checklist Items (rutas más específicas primero)
+route.put('/:boardId/:listId/:cardId/:checklistId/:checklistItemId/set-checklist-item-completed', cardController.setChecklistItemCompleted);
+route.put('/:boardId/:listId/:cardId/:checklistId/:checklistItemId/set-checklist-item-text', cardController.setChecklistItemText);
+
+// Attachments
+route.put('/:boardId/:listId/:cardId/:attachmentId/update-attachment', cardController.updateAttachment);
+
+// Labels
+route.put('/:boardId/:listId/:cardId/:labelId/update-label', cardController.updateLabel);
+route.put('/:boardId/:listId/:cardId/:labelId/update-label-selection', cardController.updateLabelSelection);
+
+// Comentarios (solo tiene un parámetro adicional)
+route.put('/:boardId/:listId/:cardId/:commentId', cardController.updateComment);
+
+// ❌ RUTA GENÉRICA AL FINAL ABSOLUTO
 route.put('/:boardId/:listId/:cardId', (req, res, next) => {
     console.log("⚠️ RUTA GENÉRICA INTERCEPTADA:", req.url);
     console.log("⚠️ PARAMS:", req.params);
