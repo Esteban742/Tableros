@@ -152,26 +152,58 @@ const updateBackground = async (req, res) => {
   }
 };
 
+
 // =================== Agregar miembro ===================
 const addMember = async (req, res) => {
-  if (!req.user || !req.user.boards) {
+  console.log('=== DEBUG ADD MEMBER START ===');
+  console.log('req.params:', req.params);
+  console.log('req.body:', req.body);
+  console.log('req.user:', req.user);
+  
+  if (!req.user || !req.user.id) {
+    console.log('❌ Usuario no autenticado');
     return res.status(401).json({ errMessage: "Usuario no autenticado" });
   }
 
-  const isMember = req.user.boards.includes(req.params.id);
+  // Usar el parámetro correcto basado en tu ruta
+  const boardId = req.params.id; // Tu ruta es /:id/add-member
+  
+  console.log('Board ID extraído:', boardId);
+  console.log('User boards:', req.user.boards);
+  
+  // Verificar si el usuario es miembro del board
+  const isMember = req.user.boards && req.user.boards.includes(boardId);
+  console.log('¿Es miembro?', isMember);
+  
   if (!isMember) {
+    console.log('❌ Usuario no es miembro del board');
     return res.status(403).json({ errMessage: "No puedes agregar miembros a este board" });
   }
 
-  const { boardId } = req.params;
-  const { members } = req.body;
+  // Aceptar tanto 'email' como 'members' para flexibilidad
+  const { email, members } = req.body;
+  
+  // Si viene un email individual, convertirlo a array
+  const membersToAdd = email ? [email] : members;
+  
+  console.log('Miembros a agregar:', membersToAdd);
+  
+  if (!membersToAdd || membersToAdd.length === 0) {
+    console.log('❌ No se proporcionaron miembros');
+    return res.status(400).json({ errMessage: "Debe proporcionar al menos un miembro para agregar" });
+  }
 
   try {
-    await boardService.addMember(boardId, members, req.user, (err, result) => {
-      if (err) return res.status(400).send(err);
+    await boardService.addMember(boardId, membersToAdd, req.user, (err, result) => {
+      if (err) {
+        console.log('❌ Error en boardService.addMember:', err);
+        return res.status(400).send(err);
+      }
+      console.log('✅ Miembro agregado exitosamente:', result);
       return res.status(200).send(result);
     });
   } catch (err) {
+    console.log('❌ Error catch en addMember:', err);
     return res.status(500).json({ errMessage: "Error al agregar miembro" });
   }
 };
