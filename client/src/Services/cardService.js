@@ -819,18 +819,23 @@ export const attachmentUpdate = async (cardId, listId, boardId, attachmentId, li
 
 export const coverUpdate = async (cardId, listId, boardId, color, isSizeOne, dispatch) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
 		const token = localStorage.getItem("token");
 		if (token) setBearer(token);
 
-		dispatch(updateCover({ color: color, isSizeOne: isSizeOne }));
-		dispatch(updateCoverOfCard({ listId, cardId, color, isSizeOne }));
+		// ✅ Normalizar valores
+		const safeColor = color ?? "";
+		const safeIsSizeOne = isSizeOne ?? false;
+
+		console.log("🎨 Enviando a backend:", { safeColor, safeIsSizeOne });
+
+		dispatch(updateCover({ color: safeColor, isSizeOne: safeIsSizeOne }));
+		dispatch(updateCoverOfCard({ listId, cardId, color: safeColor, isSizeOne: safeIsSizeOne }));
 
 		submitCall = submitCall.then(() =>
-			axios.put(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/update-cover', {
-				color: color,
-				isSizeOne: isSizeOne,
-			})
+			axios.put(
+				`${baseUrl}/${boardId}/${listId}/${cardId}/update-cover`,
+				{ color: safeColor, isSizeOne: safeIsSizeOne }
+			)
 		);
 		await submitCall;
 	} catch (error) {
@@ -842,3 +847,4 @@ export const coverUpdate = async (cardId, listId, boardId, color, isSizeOne, dis
 		);
 	}
 };
+
