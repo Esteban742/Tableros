@@ -436,69 +436,75 @@ const uploadAttachment = async (req, res) => {
 			return res.status(400).send({ errMessage: 'No file uploaded' });
 		}
 
-		// Detectar tipo de archivo para usar el resource_type correcto
+		// Detectar tipo de archivo
 		const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
 		const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
 		const videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'];
 		
-		let resourceType = 'raw'; // Por defecto para documentos
-		let deliveryType = 'upload';
-		let flags = [];
+		let resourceType = 'raw'; // Por defecto para documentos y PDFs
 
 		if (imageExtensions.includes(fileExtension)) {
 			resourceType = 'image';
 		} else if (videoExtensions.includes(fileExtension)) {
 			resourceType = 'video';
-		} else {
-			// Para documentos (PDF, DOC, etc.) que queremos mostrar en navegador
-			resourceType = 'image'; // Usar 'image' para poder aplicar transformaciones
-			flags.push('attachment:false'); // Evitar descarga forzada
 		}
 
-		// Configuración de subida optimizada
+		// Configuración de subida corregida para acceso público
 		const uploadOptions = {
 			resource_type: resourceType,
 			folder: "tableros-attachments",
 			public_id: `${cardId}-${Date.now()}`,
 			use_filename: true,
 			unique_filename: false,
+			// IMPORTANTE: Configuraciones para acceso público
 			access_mode: 'public',
-			type: deliveryType
+			type: 'upload',
+			// Asegurar que no esté bloqueado para delivery
+			invalidate: true,
+			// Para PDFs y documentos, asegurar acceso directo
+			flags: resourceType === 'raw' ? 'attachment' : undefined
 		};
 
-		// Solo agregar flags si no está vacío
-		if (flags.length > 0) {
-			uploadOptions.flags = flags.join(',');
-		}
+		console.log("🔧 Upload options:", uploadOptions);
 
 		// Subir archivo a Cloudinary
 		const uploadResult = await cloudinary.uploader.upload(req.file.path, uploadOptions);
 
-		console.log("☁️ Archivo subido a Cloudinary:", uploadResult.secure_url);
-		console.log("🔗 Resource type usado:", resourceType);
-		console.log("🏷️ Flags aplicadas:", flags);
+		console.log("☁️ Archivo subido a Cloudinary:", uploadResult);
+		console.log("🔗 Public ID:", uploadResult.public_id);
+		console.log("🔒 Access mode:", uploadResult.access_mode);
+		console.log("📊 Resource type:", uploadResult.resource_type);
 
-		// Generar URL optimizada para visualización
+		// Verificar que el archivo sea accesible
 		let optimizedUrl = uploadResult.secure_url;
-		
-		// Para documentos, usar URL de imagen con transformación para mostrar en navegador
-		if (!imageExtensions.includes(fileExtension) && !videoExtensions.includes(fileExtension)) {
-			// Construir URL que no fuerce descarga
+
+		// Para documentos (incluyendo PDFs), generar URL sin restricciones
+		if (resourceType === 'raw') {
+			// Usar URL raw pero sin forzar descarga si es posible
 			optimizedUrl = cloudinary.url(uploadResult.public_id, {
-				resource_type: 'image',
-				flags: 'attachment:false',
-				fetch_format: 'auto',
-				quality: 'auto'
+				resource_type: 'raw',
+				type: 'upload',
+				secure: true
 			});
 		}
 
 		const linkUrl = optimizedUrl;
 		const name = req.body?.name || req.file.originalname;
 
+		console.log("🌐 Final URL:", linkUrl);
+
 		// Eliminar archivo temporal del servidor
 		if (fs.existsSync(req.file.path)) {
 			fs.unlinkSync(req.file.path);
 			console.log("🗑️ Archivo temporal eliminado:", req.file.path);
+		}
+
+		// Test: Verificar accesibilidad del archivo
+		try {
+			const testResponse = await fetch(linkUrl, { method: 'HEAD' });
+			console.log("✅ Test de accesibilidad:", testResponse.status, testResponse.statusText);
+		} catch (testError) {
+			console.log("⚠️ Error en test de accesibilidad:", testError.message);
 		}
 
 		await cardService.addAttachment(
@@ -522,7 +528,8 @@ const uploadAttachment = async (req, res) => {
 					name,
 					publicId: uploadResult.public_id,
 					resourceType: resourceType,
-					originalUrl: uploadResult.secure_url // URL original por si acaso
+					accessMode: uploadResult.access_mode,
+					originalUrl: uploadResult.secure_url
 				});
 			}
 		);
@@ -542,7 +549,6 @@ const uploadAttachment = async (req, res) => {
 		});
 	}
 };
-
 
 module.exports = {
 	create,
