@@ -1,844 +1,871 @@
-import axios from 'axios';
-import { openAlert } from '../Redux/Slices/alertSlice';
-import {
-  setPending,
-  setCard,
-  updateTitle,
-  updateDescription,
-  addComment,
-  updateComment,
-  deleteComment,
-  addMember,
-  deleteMember,
-  createLabel,
-  updateLabel,
-  deleteLabel,
-  updateLabelSelection,
-  updateCreatedLabelId,
-  createChecklist,
-  updateCreatedChecklist,
-  deleteChecklist,
-  addChecklistItem,
-  updateAddedChecklistItemId,
-  setChecklistItemCompleted,
-  deleteChecklistItem,
-  setChecklistItemText,
-  updateStartDueDates,
-  updateDateCompleted,
-  addAttachment,
-  updateAddedAttachmentId,
-  deleteAttachment,
-  updateAttachment,
-  updateCover,
-} from '../Redux/Slices/cardSlice';
-import {
-  addAttachmentForCard,
-  addChecklistItemForCard,
-  createChecklistForCard,
-  createLabelForCard,
-  deleteAttachmentOfCard,
-  deleteChecklistItemOfCard,
-  deleteChecklistOfCard,
-  deleteLabelOfCard,
-  deleteMemberOfCard,
-  setCardTitle,
-  setChecklistItemCompletedOfCard,
-  setChecklistItemTextOfCard,
-  updateCoverOfCard,
-  updateDateCompletedOfCard,
-  updateDescriptionOfCard,
-  updateLabelOfCard,
-  updateLabelSelectionOfCard,
-  updateMemberOfCard,
-  updateStartDueDatesOfCard,
-} from '../Redux/Slices/listSlice';
-import setBearer from '../Utils/setBearer';
+const cardModel = require('../models/cardModel');
+const listModel = require('../models/listModel');
+const boardModel = require('../models/boardModel');
+const userModel = require('../models/userModel');
+const helperMethods = require('./helperMethods');
 
-// ✅ CORREGIDO: URL con plural
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
-const baseUrl = `${API_URL}/cards`;
-
-let submitCall = Promise.resolve();
-
-export const getCard = async (cardId, listId, boardId, dispatch) => {
-	dispatch(setPending(true));
+const create = async (title, listId, boardId, user, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get list and board
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		let response = '';
-		submitCall = submitCall.then(() =>
-			axios.get(baseUrl + '/' + boardId + '/' + listId + '/' + cardId).then((res) => {
-				response = res;
-			})
-		);
-		await submitCall;
+		// Validate the ownership
+		const validate = await helperMethods.validateCardOwners(null, list, board, user, true);
+		if (!validate) return callback({ errMessage: 'You dont have permission to add card to this list or board' });
 
-		const card = await JSON.parse(JSON.stringify(response.data));
-		dispatch(setCard(card));
-		dispatch(setPending(false));
+		// Create new card
+		const card = await cardModel({ title: title });
+		card.owner = listId;
+		card.activities.unshift({ text: `added this card to ${list.title}`, userName: user.name, color: user.color });
+		card.labels = helperMethods.labelsSeed;
+		await card.save();
+
+		// Add id of the new card to owner list
+		list.cards.push(card._id);
+		await list.save();
+
+		// Add log to board activity
+		board.activity.unshift({
+			user: user._id,
+			name: user.name,
+			action: `added ${card.title} to this board`,
+			color: user.color,
+		});
+		await board.save();
+
+		// Set data transfer object
+		const result = await listModel.findById(listId).populate({ path: 'cards' }).exec();
+		return callback(false, result);
 	} catch (error) {
-		dispatch(setPending(false));
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const titleUpdate = async (cardId, listId, boardId, title, dispatch) => {
+const deleteById = async (cardId, listId, boardId, user, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(setCardTitle({ listId, cardId, title }));
-		dispatch(updateTitle(title));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to update this card';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.put(baseUrl + '/' + boardId + '/' + listId + '/' + cardId, { title: title })
-		);
-		await submitCall;
+		// Delete the card
+		const result = await cardModel.findByIdAndDelete(cardId);
+
+		// Delete the list from lists of board
+		list.cards = list.cards.filter((tempCard) => tempCard.toString() !== cardId);
+		await list.save();
+
+		// Add activity log to board
+		board.activity.unshift({
+			user: user._id,
+			name: user.name,
+			action: `deleted ${result.title} from ${list.title}`,
+			color: user.color,
+		});
+		await board.save();
+
+		return callback(false, { message: 'Success' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const descriptionUpdate = async (cardId, listId, boardId, description, dispatch) => {
+const getCard = async (cardId, listId, boardId, user, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(updateDescription(description));
-		dispatch(updateDescriptionOfCard({ listId, cardId, description }));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			return callback({ errMessage: 'You dont have permission to view this card' });
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.put(baseUrl + '/' + boardId + '/' + listId + '/' + cardId, { description: description })
-		);
-		await submitCall;
+		// Convertir a objeto plano y asegurar que cover esté incluido
+		const cardObject = card.toObject();
+		
+		let returnObject = {
+			...cardObject,
+			listTitle: list.title,
+			listId: listId,
+			boardId: boardId
+		};
+
+		// Log para depuración
+		console.log("📋 Getting card - Cover data:", returnObject.cover);
+
+		return callback(false, returnObject);
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const comment = async (cardId, listId, boardId, text, userName, dispatch) => {
+const update = async (cardId, listId, boardId, user, updatedObj, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(setPending(true));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to update this card';
+		}
 
-		let response = '';
-		submitCall = submitCall.then(() =>
-			axios
-				.post(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/add-comment', {
-					text: text,
-				})
-				.then((res) => {
-					response = res;
-				})
-		);
-		await submitCall;
+		//Update card
+		await card.updateOne(updatedObj);
+		await card.save();
 
-		dispatch(addComment(response.data));
-		dispatch(setPending(false));
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(setPending(false));
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const commentUpdate = async (cardId, listId, boardId, text, commentId, dispatch) => {
+const addComment = async (cardId, listId, boardId, user, body, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(updateComment(commentId, text));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to update this card';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.put(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/' + commentId, {
-				text: text,
-			})
-		);
-		await submitCall;
+		//Add comment
+		card.activities.unshift({
+			text: body.text,
+			userName: user.name,
+			isComment: true,
+			color: user.color,
+		});
+		await card.save();
+
+		//Add comment to board activity
+		board.activity.unshift({
+			user: user._id,
+			name: user.name,
+			action: body.text,
+			actionType: 'comment',
+			cardTitle: card.title,
+			color: user.color,
+		});
+		board.save();
+
+		return callback(false, card.activities);
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const commentDelete = async (cardId, listId, boardId, commentId, dispatch) => {
+const updateComment = async (cardId, listId, boardId, commentId, user, body, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(deleteComment(commentId));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to update this card';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.delete(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/' + commentId)
-		);
-		await submitCall;
+		//Update card
+		card.activities = card.activities.map((activity) => {
+			if (activity._id.toString() === commentId.toString()) {
+				if (activity.userName !== user.name) {
+					return callback({ errMessage: "You can not edit the comment that you hasn't" });
+				}
+				activity.text = body.text;
+			}
+			return activity;
+		});
+		await card.save();
+
+		//Add to board activity
+		board.activity.unshift({
+			user: user._id,
+			name: user.name,
+			action: body.text,
+			actionType: 'comment',
+			edited: true,
+			color: user.color,
+			cardTitle: card.title,
+		});
+		board.save();
+
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const memberAdd = async (cardId, listId, boardId, memberId, memberName, memberColor, dispatch) => {
+const deleteComment = async (cardId, listId, boardId, commentId, user, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(addMember({ memberId, memberName, memberColor }));
-		dispatch(updateMemberOfCard({ listId, cardId, memberId, memberName, memberColor }));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to update this card';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.post(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/add-member', {
-				memberId: memberId,
-			})
-		);
-		await submitCall;
+		//Delete card
+		card.activities = card.activities.filter((activity) => activity._id.toString() !== commentId.toString());
+		await card.save();
+
+		//Add to board activity
+		board.activity.unshift({
+			user: user._id,
+			name: user.name,
+			action: `deleted his/her own comment from ${card.title}`,
+			color: user.color,
+		});
+		board.save();
+
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const memberDelete = async (cardId, listId, boardId, memberId, memberName, dispatch) => {
+const addMember = async (cardId, listId, boardId, user, memberId, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
+		const member = await userModel.findById(memberId);
 
-		dispatch(deleteMember({ memberId }));
-		dispatch(deleteMemberOfCard({ listId, cardId, memberId }));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to add member this card';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.delete(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/' + memberId + '/delete-member')
-		);
-		await submitCall;
+		//Add member
+		card.members.unshift({
+			user: member._id,
+			name: member.name,
+			color: member.color,
+		});
+		await card.save();
+
+		//Add to board activity
+		board.activity.unshift({
+			user: user._id,
+			name: user.name,
+			action: `added '${member.name}' to ${card.title}`,
+			color: user.color,
+		});
+		board.save();
+
+		return callback(false, { message: 'success' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const labelCreate = async (cardId, listId, boardId, text, color, backColor, dispatch) => {
+const deleteMember = async (cardId, listId, boardId, user, memberId, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(createLabel({ _id: 'notUpdated', text, color, backColor, selected: true }));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to add member this card';
+		}
 
-		let response = '';
-		submitCall = submitCall.then(() =>
-			axios
-				.post(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/create-label', {
-					text,
-					color,
-					backColor,
-				})
-				.then((res) => {
-					response = res;
-				})
-		);
-		await submitCall;
+		//delete member
+		card.members = card.members.filter((a) => a.user.toString() !== memberId.toString());
+		await card.save();
 
-		dispatch(updateCreatedLabelId(response.data.labelId));
-		dispatch(
-			createLabelForCard({ listId, cardId, _id: response.data.labelId, text, color, backColor, selected: true })
-		);
+		//get member
+		const tempMember = await userModel.findById(memberId);
+
+		//Add to board activity
+		board.activity.unshift({
+			user: user._id,
+			name: user.name,
+			action:
+				tempMember.name === user.name
+					? `left ${card.title}`
+					: `removed '${tempMember.name}' from ${card.title}`,
+			color: user.color,
+		});
+		board.save();
+
+		return callback(false, { message: 'success' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const labelUpdate = async (cardId, listId, boardId, labelId, label, dispatch) => {
+const createLabel = async (cardId, listId, boardId, user, label, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(updateLabel({ labelId: labelId, text: label.text, color: label.color, backColor: label.backColor }));
-		dispatch(
-			updateLabelOfCard({
-				listId,
-				cardId,
-				labelId: labelId,
-				text: label.text,
-				color: label.color,
-				backColor: label.backColor,
-			})
-		);
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to add label this card';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.put(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/' + labelId + '/update-label', label)
-		);
-		await submitCall;
+		//Add label
+		card.labels.unshift({
+			text: label.text,
+			color: label.color,
+			backcolor: label.backColor,
+			selected: true,
+		});
+		await card.save();
+
+		const labelId = card.labels[0]._id;
+
+		return callback(false, { labelId: labelId });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const labelDelete = async (cardId, listId, boardId, labelId, dispatch) => {
+const updateLabel = async (cardId, listId, boardId, labelId, user, label, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(deleteLabel(labelId));
-		dispatch(deleteLabelOfCard({ listId, cardId, labelId }));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to update this card';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.delete(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/' + labelId + '/delete-label')
-		);
-		await submitCall;
+		//Update label
+		card.labels = card.labels.map((item) => {
+			if (item._id.toString() === labelId.toString()) {
+				item.text = label.text;
+				item.color = label.color;
+				item.backColor = label.backColor;
+			}
+			return item;
+		});
+		await card.save();
+
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const labelUpdateSelection = async (cardId, listId, boardId, labelId, selected, dispatch) => {
+const deleteLabel = async (cardId, listId, boardId, labelId, user, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(updateLabelSelection({ labelId: labelId, selected: selected }));
-		dispatch(updateLabelSelectionOfCard({ listId, cardId, labelId, selected }));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to delete this label';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.put(
-				baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/' + labelId + '/update-label-selection',
-				{ selected: selected }
-			)
-		);
-		await submitCall;
+		//Delete label
+		card.labels = card.labels.filter((label) => label._id.toString() !== labelId.toString());
+		await card.save();
+
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const checklistCreate = async (cardId, listId, boardId, title, dispatch) => {
+const updateLabelSelection = async (cardId, listId, boardId, labelId, user, selected, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(createChecklist({ _id: 'notUpdated', title }));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to update this card';
+		}
 
-		let response = '';
-		submitCall = submitCall.then(() =>
-			axios
-				.post(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/create-checklist', {
-					title,
-				})
-				.then((res) => {
-					response = res;
-				})
-		);
-		await submitCall;
+		//Update label
+		card.labels = card.labels.map((item) => {
+			if (item._id.toString() === labelId.toString()) {
+				item.selected = selected;
+			}
+			return item;
+		});
+		await card.save();
 
-		dispatch(updateCreatedChecklist(response.data.checklistId));
-		dispatch(createChecklistForCard({ listId, cardId, _id: response.data.checklistId, title }));
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const checklistDelete = async (cardId, listId, boardId, checklistId, dispatch) => {
+const createChecklist = async (cardId, listId, boardId, user, title, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(deleteChecklist(checklistId));
-		dispatch(deleteChecklistOfCard({ listId, cardId, checklistId }));
-		submitCall = submitCall.then(() =>
-			axios.delete(
-				baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/' + checklistId + '/delete-checklist'
-			)
-		);
-		await submitCall;
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to add Checklist this card';
+		}
+
+		//Add checklist
+		card.checklists.push({
+			title: title,
+		});
+		await card.save();
+
+		const checklistId = card.checklists[card.checklists.length - 1]._id;
+
+		//Add to board activity
+		board.activity.unshift({
+			user: user._id,
+			name: user.name,
+			action: `added '${title}' to ${card.title}`,
+			color: user.color,
+		});
+		board.save();
+
+		return callback(false, { checklistId: checklistId });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const checklistItemAdd = async (cardId, listId, boardId, checklistId, text, dispatch) => {
+const deleteChecklist = async (cardId, listId, boardId, checklistId, user, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(addChecklistItem({ checklistId: checklistId, _id: 'notUpdated', text: text }));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to delete this checklist';
+		}
+		let cl = card.checklists.filter((l) => l._id.toString() === checklistId.toString());
+		//Delete checklist
+		card.checklists = card.checklists.filter((list) => list._id.toString() !== checklistId.toString());
+		await card.save();
 
-		let response = '';
-		submitCall = submitCall.then(() =>
-			axios
-				.post(
-					baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/' + checklistId + '/add-checklist-item',
-					{
-						text,
-					}
-				)
-				.then((res) => {
-					response = res;
-				})
-		);
-		await submitCall;
+		//Add to board activity
+		board.activity.unshift({
+			user: user._id,
+			name: user.name,
+			action: `removed '${cl.title}' from ${card.title}`,
+			color: user.color,
+		});
+		board.save();
 
-		dispatch(
-			updateAddedChecklistItemId({ checklistId: checklistId, checklistItemId: response.data.checklistItemId })
-		);
-		dispatch(
-			addChecklistItemForCard({
-				listId,
-				cardId,
-				checklistId: checklistId,
-				_id: response.data.checklistItemId,
-				text: text,
-			})
-		);
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const checklistItemCompletedSet = async (
+const addChecklistItem = async (cardId, listId, boardId, user, checklistId, text, callback) => {
+	try {
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
+
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to add item this checklist';
+		}
+
+		//Add checklistItem
+		card.checklists = card.checklists.map((list) => {
+			if (list._id.toString() == checklistId.toString()) {
+				list.items.push({ text: text });
+			}
+			return list;
+		});
+		await card.save();
+
+		// Get to created ChecklistItem's id
+		let checklistItemId = '';
+		card.checklists = card.checklists.map((list) => {
+			if (list._id.toString() == checklistId.toString()) {
+				checklistItemId = list.items[list.items.length - 1]._id;
+			}
+			return list;
+		});
+		return callback(false, { checklistItemId: checklistItemId });
+	} catch (error) {
+		return callback({ errMessage: 'Something went wrong', details: error.message });
+	}
+};
+
+const setChecklistItemCompleted = async (
 	cardId,
 	listId,
 	boardId,
+	user,
 	checklistId,
 	checklistItemId,
 	completed,
-	dispatch
+	callback
 ) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(
-			setChecklistItemCompleted({
-				checklistId: checklistId,
-				checklistItemId: checklistItemId,
-				completed: completed,
-			})
-		);
-		dispatch(
-			setChecklistItemCompletedOfCard({
-				listId,
-				cardId,
-				checklistId: checklistId,
-				checklistItemId: checklistItemId,
-				completed: completed,
-			})
-		);
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to set complete of this checklist item';
+		}
+		let clItem = '';
+		//Update completed of checklistItem
+		card.checklists = card.checklists.map((list) => {
+			if (list._id.toString() == checklistId.toString()) {
+				list.items = list.items.map((item) => {
+					if (item._id.toString() === checklistItemId) {
+						item.completed = completed;
+						clItem = item.text;
+					}
+					return item;
+				});
+			}
+			return list;
+		});
+		await card.save();
 
-		submitCall = submitCall.then(() =>
-			axios.put(
-				baseUrl +
-					'/' +
-					boardId +
-					'/' +
-					listId +
-					'/' +
-					cardId +
-					'/' +
-					checklistId +
-					'/' +
-					checklistItemId +
-					'/set-checklist-item-completed',
-				{
-					completed,
-				}
-			)
-		);
-		await submitCall;
+		//Add to board activity
+		board.activity.unshift({
+			user: user._id,
+			name: user.name,
+			action: completed
+				? `completed '${clItem}' on ${card.title}`
+				: `marked as uncompleted to '${clItem}' on ${card.title}`,
+			color: user.color,
+		});
+		board.save();
+
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const checklistItemTextSet = async (cardId, listId, boardId, checklistId, checklistItemId, text, dispatch) => {
+const setChecklistItemText = async (cardId, listId, boardId, user, checklistId, checklistItemId, text, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(setChecklistItemText({ checklistId: checklistId, checklistItemId: checklistItemId, text: text }));
-		dispatch(
-			setChecklistItemTextOfCard({
-				listId,
-				cardId,
-				checklistId: checklistId,
-				checklistItemId: checklistItemId,
-				text: text,
-			})
-		);
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to set text of this checklist item';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.put(
-				baseUrl +
-					'/' +
-					boardId +
-					'/' +
-					listId +
-					'/' +
-					cardId +
-					'/' +
-					checklistId +
-					'/' +
-					checklistItemId +
-					'/set-checklist-item-text',
-				{
-					text,
-				}
-			)
-		);
-		await submitCall;
+		//Update text of checklistItem
+		card.checklists = card.checklists.map((list) => {
+			if (list._id.toString() == checklistId.toString()) {
+				list.items = list.items.map((item) => {
+					if (item._id.toString() === checklistItemId) {
+						item.text = text;
+					}
+					return item;
+				});
+			}
+			return list;
+		});
+		await card.save();
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const checklistItemDelete = async (cardId, listId, boardId, checklistId, checklistItemId, dispatch) => {
+const deleteChecklistItem = async (cardId, listId, boardId, user, checklistId, checklistItemId, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(deleteChecklistItem({ checklistId: checklistId, checklistItemId: checklistItemId }));
-		dispatch(
-			deleteChecklistItemOfCard({ listId, cardId, checklistId: checklistId, checklistItemId: checklistItemId })
-		);
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to delete this checklist item';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.delete(
-				baseUrl +
-					'/' +
-					boardId +
-					'/' +
-					listId +
-					'/' +
-					cardId +
-					'/' +
-					checklistId +
-					'/' +
-					checklistItemId +
-					'/delete-checklist-item'
-			)
-		);
-		await submitCall;
+		//Delete checklistItem
+		card.checklists = card.checklists.map((list) => {
+			if (list._id.toString() == checklistId.toString()) {
+				list.items = list.items.filter((item) => item._id.toString() !== checklistItemId);
+			}
+			return list;
+		});
+		await card.save();
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const startDueDatesUpdate = async (cardId, listId, boardId, startDate, dueDate, dueTime, dispatch) => {
+const updateStartDueDates = async (cardId, listId, boardId, user, startDate, dueDate, dueTime, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(updateStartDueDates({ startDate, dueDate, dueTime }));
-		dispatch(updateStartDueDatesOfCard({ listId, cardId, startDate, dueDate, dueTime }));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to update date of this card';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.put(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/update-dates', {
-				startDate,
-				dueDate,
-				dueTime,
-			})
-		);
-		await submitCall;
+		//Update dates
+		card.date.startDate = startDate;
+		card.date.dueDate = dueDate;
+		card.date.dueTime = dueTime;
+		if (dueDate === null) card.date.completed = false;
+		await card.save();
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const dateCompletedUpdate = async (cardId, listId, boardId, completed, dispatch) => {
+const updateDateCompleted = async (cardId, listId, boardId, user, completed, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(updateDateCompleted(completed));
-		dispatch(updateDateCompletedOfCard({ listId, cardId, completed }));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to update date of this card';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.put(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/update-date-completed', {
-				completed,
-			})
-		);
-		await submitCall;
+		//Update date completed event
+		card.date.completed = completed;
+
+		await card.save();
+
+		//Add to board activity
+		board.activity.unshift({
+			user: user._id,
+			name: user.name,
+			action: `marked the due date on ${card.title} ${completed ? 'complete' : 'uncomplete'}`,
+			color: user.color,
+		});
+		board.save();
+
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const attachmentAdd = async (cardId, listId, boardId, link, name, dispatch) => {
+const addAttachment = async (cardId, listId, boardId, user, link, name, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(addAttachment({ link: link, name: name, _id: 'notUpdated', date: Date() }));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to update date of this card';
+		}
 
-		let response = '';
-		submitCall = submitCall.then(() =>
-			axios
-				.post(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/add-attachment', {
-					link: link,
-					name: name,
-				})
-				.then((res) => {
-					response = res;
-				})
-		);
-		await submitCall;
+		//Add attachment
+		const validLink = new RegExp(/^https?:\/\//).test(link) ? link : 'http://' + link;
 
-		dispatch(updateAddedAttachmentId(response.data.attachmentId));
-		dispatch(
-			addAttachmentForCard({
-				listId,
-				cardId,
-				link: link,
-				name: name,
-				_id: response.data.attachmentId,
-				date: Date(),
-			})
-		);
+		card.attachments.push({ link: validLink, name: name });
+		await card.save();
+
+		//Add to board activity
+		board.activity.unshift({
+			user: user._id,
+			name: user.name,
+			action: `attached ${validLink} to ${card.title}`,
+			color: user.color,
+		});
+		board.save();
+
+		return callback(false, { attachmentId: card.attachments[card.attachments.length - 1]._id.toString() });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const attachmentUpload = async (cardId, listId, boardId, file, name, dispatch) => {
+const deleteAttachment = async (cardId, listId, boardId, user, attachmentId, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		let response = '';
-		const formData = new FormData();
-		formData.append('file', file);
-		if (name) formData.append('name', name);
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to delete this attachment';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios
-				.post(
-					`${baseUrl}/${boardId}/${listId}/${cardId}/upload-attachment`,
-					formData,
-					{ headers: { 'Content-Type': 'multipart/form-data' } }
-				)
-				.then((res) => {
-					response = res;
-				})
+		let attachmentObj = card.attachments.filter(
+			(attachment) => attachment._id.toString() === attachmentId.toString()
 		);
-		await submitCall;
 
-		const { attachmentId, link, name: resolvedName } = response.data;
-
-		dispatch(updateAddedAttachmentId(attachmentId));
-		dispatch(
-			addAttachmentForCard({
-				listId,
-				cardId,
-				link: link,
-				name: resolvedName,
-				_id: attachmentId,
-				date: Date(),
-			})
+		//Delete checklistItem
+		card.attachments = card.attachments.filter(
+			(attachment) => attachment._id.toString() !== attachmentId.toString()
 		);
+		await card.save();
+
+		//Add to board activity
+		board.activity.unshift({
+			user: user._id,
+			name: user.name,
+			action: `deleted the ${attachmentObj[0].link} attachment from ${card.title}`,
+			color: user.color,
+		});
+		board.save();
+
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const attachmentDelete = async (cardId, listId, boardId, attachmentId, dispatch) => {
+const updateAttachment = async (cardId, listId, boardId, user, attachmentId, link, name, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(deleteAttachment(attachmentId));
-		dispatch(deleteAttachmentOfCard({ listId, cardId, attachmentId }));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			errMessage: 'You dont have permission to update attachment of this card';
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.delete(
-				baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/' + attachmentId + '/delete-attachment'
-			)
-		);
-		await submitCall;
+		//Update date completed event
+		card.attachments = card.attachments.map((attachment) => {
+			if (attachment._id.toString() === attachmentId.toString()) {
+				attachment.link = link;
+				attachment.name = name;
+			}
+			return attachment;
+		});
+
+		await card.save();
+		return callback(false, { message: 'Success!' });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const attachmentUpdate = async (cardId, listId, boardId, attachmentId, link, name, dispatch) => {
+const updateCover = async (cardId, listId, boardId, user, color, isSizeOne, callback) => {
 	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
+		// Get models
+		const card = await cardModel.findById(cardId);
+		const list = await listModel.findById(listId);
+		const board = await boardModel.findById(boardId);
 
-		dispatch(updateAttachment({ attachmentId: attachmentId, link: link, name: name }));
+		// Validate owner
+		const validate = await helperMethods.validateCardOwners(card, list, board, user, false);
+		if (!validate) {
+			return callback({ errMessage: 'You dont have permission to update attachment of this card' });
+		}
 
-		submitCall = submitCall.then(() =>
-			axios.put(
-				baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/' + attachmentId + '/update-attachment',
-				{ link: link, name: name }
-			)
-		);
-		await submitCall;
+		// Logs para depurar
+		console.log("🎨 Before update - Current cover:", card.cover);
+		console.log("🎨 Updating cover with:", { color, isSizeOne });
+
+		//Update date cover color
+		card.cover.color = color;
+		card.cover.isSizeOne = isSizeOne;
+
+		await card.save();
+		
+		// Verificar después de guardar
+		const updatedCard = await cardModel.findById(cardId);
+		console.log("🎨 After update - New cover:", updatedCard.cover);
+
+		return callback(false, { message: 'Success!', cover: updatedCard.cover });
 	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
+		console.error("❌ Error updating cover:", error);
+		return callback({ errMessage: 'Something went wrong', details: error.message });
 	}
 };
 
-export const coverUpdate = async (cardId, listId, boardId, color, isSizeOne, dispatch) => {
-	try {
-		// ✅ AÑADIDO: Configurar token
-		const token = localStorage.getItem("token");
-		if (token) setBearer(token);
-
-		dispatch(updateCover({ color: color, isSizeOne: isSizeOne }));
-		dispatch(updateCoverOfCard({ listId, cardId, color, isSizeOne }));
-
-		submitCall = submitCall.then(() =>
-			axios.put(baseUrl + '/' + boardId + '/' + listId + '/' + cardId + '/update-cover', {
-				color: color,
-				isSizeOne: isSizeOne,
-			})
-		);
-		await submitCall;
-	} catch (error) {
-		dispatch(
-			openAlert({
-				message: error?.response?.data?.errMessage ? error.response.data.errMessage : error.message,
-				severity: 'error',
-			})
-		);
-	}
+module.exports = {
+	create,
+	update,
+	getCard,
+	addComment,
+	deleteById,
+	updateComment,
+	deleteComment,
+	addMember,
+	deleteMember,
+	createLabel,
+	updateLabel,
+	deleteLabel,
+	updateLabelSelection,
+	createChecklist,
+	deleteChecklist,
+	addChecklistItem,
+	setChecklistItemCompleted,
+	setChecklistItemText,
+	deleteChecklistItem,
+	updateStartDueDates,
+	updateDateCompleted,
+	addAttachment,
+	deleteAttachment,
+	updateAttachment,
+	updateCover,
 };
