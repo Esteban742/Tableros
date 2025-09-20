@@ -1,16 +1,18 @@
 const express = require('express');
-const boardController = require('../controllers/boardController'); // <- aquí
+const boardController = require('../controllers/boardController');
 const route = express.Router();
 
-route.post('/:boardId/add-member', boardController.addMember);
-route.delete('/:boardId/remove-member', boardController.removeMember);
-route.put('/:boardId/update-background', boardController.updateBackground);
-route.put('/:boardId/update-board-description', boardController.updateBoardDescription);
-route.put('/:boardId/update-board-title', boardController.updateBoardTitle);
-route.post('/create', boardController.create);
-route.get('/:id', boardController.getById);
+// ✅ TODAS las rutas usan /:id para consistencia
+route.post('/:id/add-member', boardController.addMember);
+route.delete('/:id/remove-member', boardController.removeMember);
+route.put('/:id/update-background', boardController.updateBackground);
+route.put('/:id/update-board-description', boardController.updateBoardDescription);
+route.put('/:id/update-board-title', boardController.updateBoardTitle);
 route.get('/:id/activity', boardController.getActivityById);
+route.get('/:id', boardController.getById);
+
+// Rutas sin parámetros al final para evitar conflictos
+route.post('/create', boardController.create);
 route.get('/', boardController.getAll);
 
 module.exports = route;
-
