@@ -42,7 +42,7 @@ const route = express.Router();
 route.post('/create', cardController.create);
 route.delete('/:boardId/:listId/:cardId', cardController.deleteById);
 route.get('/:boardId/:listId/:cardId', cardController.getCard);
-route.put('/:boardId/:listId/:cardId', cardController.update);
+
 
 // Comentarios
 route.post('/:boardId/:listId/:cardId/add-comment', cardController.addComment);
@@ -93,5 +93,7 @@ route.put('/:boardId/:listId/:cardId/update-cover', async (req, res, next) => {
         next(error);
     }
 });
+
+route.put('/:boardId/:listId/:cardId', cardController.update);
 
 module.exports = route;
