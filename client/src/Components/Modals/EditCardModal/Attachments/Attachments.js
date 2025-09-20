@@ -172,10 +172,9 @@ const Attachments = (props) => {
 						</video>
 					)}
 					
-					{/* Para PDFs - intentar mostrar directamente en iframe */}
+					{/* Para PDFs - iframe simplificado con más debug */}
 					{fileType === 'pdf' && (
-						<div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-							{/* Intentar mostrar PDF en iframe */}
+						<div style={{ height: '100%', position: 'relative' }}>
 							<iframe 
 								src={attachment.link}
 								style={{ 
@@ -184,82 +183,40 @@ const Attachments = (props) => {
 									border: 'none'
 								}}
 								title={attachment.name}
-								onError={() => {
-									console.log("No se pudo cargar PDF en iframe");
-									setLoadError(true);
-								}}
-								onLoad={() => {
-									console.log("PDF cargado exitosamente en iframe");
-								}}
+								onLoad={() => console.log("✅ Iframe cargado")}
+								onError={() => console.log("❌ Error en iframe")}
 							/>
-							
-							{/* Botón para abrir en nueva pestaña si necesitas mejor vista */}
-							<Box 
-								position="absolute" 
-								top={10} 
-								right={60} 
-								style={{ 
-									backgroundColor: 'rgba(0,0,0,0.7)', 
-									padding: '8px',
-									borderRadius: '6px'
+							<div style={{
+								position: 'absolute',
+								top: '10px',
+								left: '10px',
+								background: 'rgba(0,0,0,0.7)',
+								color: 'white',
+								padding: '5px 10px',
+								borderRadius: '4px',
+								fontSize: '12px'
+							}}>
+								PDF: {attachment.name}
+							</div>
+							<button
+								onClick={handlePdfView}
+								title="Abrir en nueva pestaña para mejor visualización"
+								style={{
+									position: 'absolute',
+									top: '10px',
+									right: '10px',
+									backgroundColor: '#0079bf', 
+									color: 'white',
+									padding: '8px 12px',
+									border: 'none',
+									borderRadius: '4px',
+									cursor: 'pointer',
+									fontSize: '12px',
+									fontWeight: '600'
 								}}
 							>
-								<button
-									onClick={handlePdfView}
-									title="Abrir en nueva pestaña para mejor visualización"
-									style={{ 
-										backgroundColor: '#0079bf', 
-										color: 'white',
-										padding: '8px 12px',
-										border: 'none',
-										borderRadius: '4px',
-										cursor: 'pointer',
-										fontSize: '12px',
-										fontWeight: '600'
-									}}
-								>
-									📖 Ampliar
-								</button>
-							</Box>
-							
-							{/* Si falla el iframe, mostrar la interfaz alternativa */}
-							{loadError && (
-								<Box 
-									position="absolute"
-									top={0}
-									left={0}
-									width="100%"
-									height="100%"
-									display="flex" 
-									flexDirection="column" 
-									alignItems="center" 
-									justifyContent="center" 
-									gap={3}
-									style={{ backgroundColor: '#f8f9fa', padding: '2rem' }}
-								>
-									<div style={{ fontSize: '4rem' }}>📄</div>
-									<h3 style={{ margin: '0', color: '#333' }}>Vista previa no disponible</h3>
-									<p style={{ textAlign: 'center', color: '#6c757d', margin: '1rem 0' }}>
-										Este PDF no se puede mostrar directamente en el modal.<br/>
-										Puedes abrirlo en una nueva pestaña para visualizarlo.
-									</p>
-									<button
-										onClick={handlePdfView}
-										style={{ 
-											backgroundColor: '#0079bf', 
-											color: 'white',
-											padding: '12px 24px',
-											border: 'none',
-											borderRadius: '6px',
-											cursor: 'pointer',
-											fontSize: '14px',
-											fontWeight: '600'
-										}}
-									>
-										📖 Ver PDF
-									</button>
-								</Box>
-							)}
+								📖 Ampliar
+							</button>
 						</div>
 					)}
 					
