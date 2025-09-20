@@ -53,8 +53,7 @@ const Attachments = (props) => {
 		e.preventDefault();
 		e.stopPropagation();
 		
-		// Usar window.open con '_self' si quieres misma pestaña
-		// o mantener '_blank' pero sin configuraciones que causen popup
+		// Usar window.open sin configuraciones que causen popup
 		window.open(attachmentLink, '_blank');
 	};
 
@@ -85,11 +84,10 @@ const Attachments = (props) => {
 	const PreviewModal = ({ attachment, onClose }) => {
 		const fileType = getFileType(attachment.name || attachment.link);
 		const [loadError, setLoadError] = useState(false);
-		const [showPdfViewer, setShowPdfViewer] = useState(false);
 		
 		// Para PDFs, intentar diferentes métodos
 		const handlePdfView = () => {
-			// Intentar abrir con el visor nativo del navegador
+			// Abrir con el visor nativo del navegador
 			window.open(attachment.link, '_blank');
 		};
 		
@@ -148,7 +146,7 @@ const Attachments = (props) => {
 						</video>
 					)}
 					
-					{/* Para PDFs - mostrar siempre el mensaje informativo */}
+					{/* Para PDFs - mostrar siempre la interfaz optimizada */}
 					{fileType === 'pdf' && (
 						<Box 
 							display="flex" 
