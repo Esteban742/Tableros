@@ -79,9 +79,16 @@ const Attachments = (props) => {
 		return 'other';
 	};
 
-	// Componente de vista previa
+	// Componente de vista previa mejorado
 	const PreviewModal = ({ attachment, onClose }) => {
 		const fileType = getFileType(attachment.name || attachment.link);
+		const [loadError, setLoadError] = useState(false);
+		
+		// Para PDFs, usar el visor de PDF del navegador
+		const getPdfUrl = (url) => {
+			// Agregar parámetros para mejor visualización
+			return `${url}#view=FitH&toolbar=1&navpanes=1`;
+		};
 		
 		return (
 			<Dialog 
@@ -91,51 +98,111 @@ const Attachments = (props) => {
 				fullWidth
 				PaperProps={{
 					style: {
-						minHeight: '70vh',
-						maxHeight: '90vh'
+						minHeight: '80vh',
+						maxHeight: '95vh'
 					}
 				}}
 			>
 				<DialogTitle>
 					<Box display="flex" justifyContent="space-between" alignItems="center">
 						<span>{attachment.name || 'Vista previa'}</span>
-						<IconButton onClick={onClose} size="small">
-							<CloseIcon />
-						</IconButton>
+						<Box>
+							<IconButton 
+								onClick={() => window.open(attachment.link, '_blank')} 
+								size="small"
+								title="Abrir en nueva pestaña"
+							>
+								<OpenInNewIcon />
+							</IconButton>
+							<IconButton onClick={onClose} size="small">
+								<CloseIcon />
+							</IconButton>
+						</Box>
 					</Box>
 				</DialogTitle>
-				<DialogContent style={{ padding: 0 }}>
+				<DialogContent style={{ padding: 0, height: '75vh' }}>
 					{fileType === 'image' && (
 						<img 
 							src={attachment.link} 
 							alt={attachment.name}
 							style={{ 
 								width: '100%', 
-								height: 'auto',
-								maxHeight: '70vh',
-								objectFit: 'contain'
+								height: '100%',
+								objectFit: 'contain',
+								backgroundColor: '#f5f5f5'
 							}}
+							onError={() => setLoadError(true)}
 						/>
 					)}
 					{fileType === 'video' && (
 						<video 
 							controls 
-							style={{ width: '100%', height: 'auto', maxHeight: '70vh' }}
+							style={{ width: '100%', height: '100%' }}
+							onError={() => setLoadError(true)}
 						>
 							<source src={attachment.link} />
 							Tu navegador no soporta videos.
 						</video>
 					)}
-					{(fileType === 'document' || fileType === 'other') && (
+					{fileType === 'document' && !loadError && (
+						<>
+							{/* Intentar iframe primero */}
+							<iframe 
+								src={getPdfUrl(attachment.link)}
+								style={{ 
+									width: '100%', 
+									height: '100%',
+									border: 'none'
+								}}
+								title={attachment.name}
+								onError={() => setLoadError(true)}
+							/>
+						</>
+					)}
+					{fileType === 'other' && !loadError && (
 						<iframe 
 							src={attachment.link}
 							style={{ 
 								width: '100%', 
-								height: '70vh',
+								height: '100%',
 								border: 'none'
 							}}
 							title={attachment.name}
+							onError={() => setLoadError(true)}
 						/>
+					)}
+					
+					{/* Fallback cuando hay error o no se puede mostrar */}
+					{(loadError || fileType === 'document') && (
+						<Box 
+							display="flex" 
+							flexDirection="column" 
+							alignItems="center" 
+							justifyContent="center" 
+							height="100%" 
+							gap={2}
+							style={{ backgroundColor: '#f8f9fa', padding: '2rem' }}
+						>
+							<AttachmentIcon style={{ fontSize: '4rem', color: '#6c757d' }} />
+							<h3>Vista previa no disponible</h3>
+							<p style={{ textAlign: 'center', color: '#6c757d' }}>
+								Este tipo de archivo no se puede mostrar en vista previa.<br/>
+								Haz clic en "Abrir en nueva pestaña" para ver el archivo completo.
+							</p>
+							<Button
+								onClick={() => window.open(attachment.link, '_blank')}
+								style={{ 
+									backgroundColor: '#0079bf', 
+									color: 'white',
+									padding: '10px 20px',
+									border: 'none',
+									borderRadius: '3px',
+									cursor: 'pointer'
+								}}
+							>
+								Abrir en nueva pestaña
+							</Button>
+						</Box>
 					)}
 				</DialogContent>
 			</Dialog>
